@@ -1,0 +1,281 @@
+import { useMemo, useState } from "react";
+import {
+  Box,
+  Paper,
+  Typography,
+  IconButton,
+  Divider,
+  Tabs,
+  Tab,
+  Button,
+} from "@mui/material";
+import { Bell, BookOpen, TrendingUp, Info, Check, Trash2 } from "lucide-react";
+
+const data = [
+  {
+    id: 1,
+    type: "papers",
+    title: "New LLM paper",
+    message: "A new paper matches your interest.",
+    time: "2h ago",
+    read: false,
+  },
+  {
+    id: 2,
+    type: "trends",
+    title: "Topic momentum up",
+    message: "Generative AI increased by 16%.",
+    time: "4h ago",
+    read: false,
+  },
+  {
+    id: 3,
+    type: "system",
+    title: "Sync completed",
+    message: "Crossref sync finished successfully.",
+    time: "8h ago",
+    read: true,
+  },
+  {
+    id: 4,
+    type: "papers",
+    title: "Author update",
+    message: "A followed author published new work.",
+    time: "1d ago",
+    read: true,
+  },
+  {
+    id: 5,
+    type: "trends",
+    title: "Emerging keyword",
+    message: "Tool-augmented reasoning is rising.",
+    time: "1d ago",
+    read: false,
+  },
+  {
+    id: 6,
+    type: "system",
+    title: "Security notice",
+    message: "Password policy updated.",
+    time: "2d ago",
+    read: true,
+  },
+  {
+    id: 7,
+    type: "papers",
+    title: "Journal release",
+    message: "Nature MI published latest issue.",
+    time: "2d ago",
+    read: false,
+  },
+  {
+    id: 8,
+    type: "trends",
+    title: "Field alert",
+    message: "Biology AI submissions surged.",
+    time: "3d ago",
+    read: true,
+  },
+];
+
+interface NotificationsProps {
+  onMarkAllRead?: () => void;
+}
+
+export default function Notifications({ onMarkAllRead }: NotificationsProps) {
+  const [tab, setTab] = useState("all");
+  const [items, setItems] = useState(data);
+  const [visible, setVisible] = useState(4);
+
+  const filtered = useMemo(
+    () => items.filter((n) => tab === "all" || n.type === tab),
+    [items, tab],
+  );
+  const shown = filtered.slice(0, visible);
+
+  const markAll = () => {
+    setItems((prev) => prev.map((n) => ({ ...n, read: true })));
+    onMarkAllRead?.();
+  };
+
+  const getTypeColor = (type: string) => {
+    if (type === "papers")
+      return {
+        bg: "rgba(102,126,234,0.08)",
+        border: "rgba(102,126,234,0.3)",
+        text: "#667eea",
+        icon: "📄",
+      };
+    if (type === "trends")
+      return {
+        bg: "rgba(245,87,108,0.08)",
+        border: "rgba(245,87,108,0.3)",
+        text: "#f5576c",
+        icon: "📈",
+      };
+    return {
+      bg: "rgba(79,184,254,0.08)",
+      border: "rgba(79,184,254,0.3)",
+      text: "#4facfe",
+      icon: "⚙️",
+    };
+  };
+
+  return (
+    <Box>
+      <Paper
+        sx={{
+          p: 2,
+          mb: 2,
+          borderRadius: 3,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          background:
+            "linear-gradient(135deg, rgba(102,126,234,0.08), rgba(79,184,254,0.08))",
+          border: "1px solid rgba(102,126,234,0.2)",
+        }}
+      >
+        <Tabs
+          value={tab}
+          onChange={(_, v) => {
+            setTab(v);
+            setVisible(4);
+          }}
+          sx={{
+            "& .MuiTab-root": { textTransform: "none", fontWeight: 500 },
+            "& .Mui-selected": { color: "#4f46e5 !important" },
+          }}
+        >
+          <Tab value="all" label="All" />
+          <Tab value="papers" label="Papers" />
+          <Tab value="trends" label="Trends" />
+          <Tab value="system" label="System" />
+        </Tabs>
+        <Button
+          onClick={markAll}
+          sx={{
+            bgcolor: "#4f46e5",
+            color: "#fff",
+            textTransform: "none",
+            "&:hover": { bgcolor: "#4338ca" },
+          }}
+        >
+          Mark all as read
+        </Button>
+      </Paper>
+      <Paper
+        sx={{
+          borderRadius: 3,
+          overflow: "hidden",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+        }}
+      >
+        {shown.map((n, idx) => {
+          const typeColor = getTypeColor(n.type);
+          return (
+            <Box
+              key={n.id}
+              sx={{
+                p: 2.5,
+                background: n.read
+                  ? "transparent"
+                  : `linear-gradient(135deg, ${typeColor.bg}, rgba(255,255,255,0.5))`,
+                border: n.read
+                  ? "1px solid rgba(0,0,0,0.06)"
+                  : `1px solid ${typeColor.border}`,
+                borderBottom:
+                  idx < shown.length - 1
+                    ? "1px solid rgba(0,0,0,0.08)"
+                    : "none",
+                transition: "all 0.2s ease",
+                "&:hover": {
+                  bgcolor: !n.read ? typeColor.bg : "rgba(0,0,0,0.02)",
+                },
+              }}
+            >
+              <Box sx={{ display: "flex", gap: 1, alignItems: "start" }}>
+                <Typography sx={{ fontSize: "1.2rem" }}>
+                  {typeColor.icon}
+                </Typography>
+                <Box sx={{ flex: 1 }}>
+                  <Typography
+                    sx={{
+                      fontWeight: n.read ? 500 : 700,
+                      color: typeColor.text,
+                      fontSize: "0.95rem",
+                    }}
+                  >
+                    {n.title}
+                  </Typography>
+                  <Typography
+                    sx={{ color: "#64748b", fontSize: "0.85rem", mt: 0.3 }}
+                  >
+                    {n.message}
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      mt: 1,
+                    }}
+                  >
+                    <Typography sx={{ fontSize: "0.75rem", color: "#94a3b8" }}>
+                      {n.time}
+                    </Typography>
+                    <Box>
+                      {!n.read && (
+                        <IconButton
+                          size="small"
+                          onClick={() =>
+                            setItems(
+                              items.map((x) =>
+                                x.id === n.id ? { ...x, read: true } : x,
+                              ),
+                            )
+                          }
+                          sx={{
+                            color: typeColor.text,
+                            "&:hover": { bgcolor: typeColor.bg },
+                          }}
+                        >
+                          <Check size={14} />
+                        </IconButton>
+                      )}
+                      <IconButton
+                        size="small"
+                        onClick={() =>
+                          setItems(items.filter((x) => x.id !== n.id))
+                        }
+                        sx={{
+                          color: "#ef4444",
+                          "&:hover": { bgcolor: "rgba(239,68,68,0.1)" },
+                        }}
+                      >
+                        <Trash2 size={14} />
+                      </IconButton>
+                    </Box>
+                  </Box>
+                </Box>
+              </Box>
+            </Box>
+          );
+        })}
+      </Paper>
+      {visible < filtered.length && (
+        <Box sx={{ textAlign: "center", mt: 2 }}>
+          <Button
+            onClick={() => setVisible((v) => v + 4)}
+            sx={{
+              textTransform: "none",
+              color: "#4f46e5",
+              "&:hover": { bgcolor: "rgba(79,70,229,0.08)" },
+            }}
+          >
+            Load more
+          </Button>
+        </Box>
+      )}
+    </Box>
+  );
+}

@@ -5,10 +5,12 @@ import {
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import { Download } from 'lucide-react';
 
-const volumeData: any[] = [];
-const topJournals: any[] = [];
-const topAuthors: any[] = [];
-const coOccur: any[] = [];
+const volumeData = [
+  { year: 2019, papers: 1200 }, { year: 2020, papers: 1450 }, { year: 2021, papers: 1890 }, { year: 2022, papers: 2450 }, { year: 2023, papers: 2960 }, { year: 2024, papers: 3380 }, { year: 2025, papers: 3810 },
+];
+const topJournals = [{ name: 'Nature', value: 220 }, { name: 'Science', value: 180 }, { name: 'JMLR', value: 160 }];
+const topAuthors = [{ name: 'Alice', value: 72 }, { name: 'Bob', value: 63 }, { name: 'Carol', value: 55 }];
+const coOccur = [{ name: 'LLM+RLHF', value: 38, color: '#4f46e5' }, { name: 'CV+ViT', value: 28, color: '#10b981' }, { name: 'Graph+NLP', value: 20, color: '#f59e0b' }];
 
 export default function AnalyticsReport() {
   const [field, setField] = useState('AI');

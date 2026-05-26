@@ -19,7 +19,41 @@ import {
 import { Search, User, Calendar, BookOpen, Quote } from "lucide-react";
 import PaperDetail, { type Paper as PaperType } from "./PaperDetail";
 
-const papers: PaperType[] = [];
+const papers: PaperType[] = [
+  {
+    id: 1,
+    title: "Constitutional AI: Harmlessness from AI Feedback",
+    authors: ["Yuntao Bai", "Saurav Kadavath"],
+    journal: "arXiv",
+    year: 2022,
+    abstract: "Training harmless assistants with AI feedback.",
+    citations: 450,
+    doi: "10.48550/arXiv.2212.08073",
+    keywords: ["AI Safety", "LLM", "RLHF"],
+  },
+  {
+    id: 2,
+    title: "Attention Is All You Need",
+    authors: ["Ashish Vaswani", "Noam Shazeer"],
+    journal: "NeurIPS",
+    year: 2017,
+    abstract: "Transformer architecture for sequence modeling.",
+    citations: 98500,
+    doi: "10.48550/arXiv.1706.03762",
+    keywords: ["Transformer", "NLP"],
+  },
+  {
+    id: 3,
+    title: "Language Models are Few-Shot Learners",
+    authors: ["Tom Brown", "Benjamin Mann"],
+    journal: "NeurIPS",
+    year: 2020,
+    abstract: "Large-scale language models and in-context learning.",
+    citations: 24300,
+    doi: "10.48550/arXiv.2005.14165",
+    keywords: ["GPT-3", "LLM"],
+  },
+];
 
 export default function SearchPapers() {
   const [query, setQuery] = useState("");

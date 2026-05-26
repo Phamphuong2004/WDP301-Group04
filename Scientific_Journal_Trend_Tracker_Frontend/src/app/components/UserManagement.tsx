@@ -26,7 +26,29 @@ import {
 } from "@mui/material";
 import { UserPlus, Edit3, ArrowLeft } from "lucide-react";
 
-const seed: any[] = [];
+const seed = [
+  {
+    id: 1,
+    name: "Dr. Alice Chen",
+    email: "alice.chen@mit.edu",
+    role: "Researcher",
+    status: "Active",
+  },
+  {
+    id: 2,
+    name: "Bob Martinez",
+    email: "bob@stanford.edu",
+    role: "Lecturer/Student",
+    status: "Suspended",
+  },
+  {
+    id: 3,
+    name: "Admin Jane",
+    email: "jane@system.io",
+    role: "Admin",
+    status: "Active",
+  },
+];
 
 interface UserManagementProps {
   currentRole?: string;

@@ -175,7 +175,23 @@ export default function AdminDashboard({ onNavigate }: AdminDashboardProps) {
               </Typography>
             </Box>
             <Box sx={{ p: 2.5 }}>
-              {[].map((item: any, idx) => (
+              {[
+                {
+                  action: "New user registration pending",
+                  count: 5,
+                  type: "pending",
+                },
+                {
+                  action: "Account suspension requests",
+                  count: 2,
+                  type: "warning",
+                },
+                {
+                  action: "Role change requests",
+                  count: 3,
+                  type: "info",
+                },
+              ].map((item, idx) => (
                 <Box
                   key={idx}
                   sx={{
@@ -241,7 +257,23 @@ export default function AdminDashboard({ onNavigate }: AdminDashboardProps) {
               </Typography>
             </Box>
             <Box sx={{ p: 2.5 }}>
-              {[].map((item: any, idx) => (
+              {[
+                {
+                  alert: "High CPU usage detected",
+                  severity: "warning",
+                  time: "5 minutes ago",
+                },
+                {
+                  alert: "Database backup completed",
+                  severity: "success",
+                  time: "1 hour ago",
+                },
+                {
+                  alert: "Security patch available",
+                  severity: "info",
+                  time: "2 hours ago",
+                },
+              ].map((item, idx) => (
                 <Box
                   key={idx}
                   sx={{
@@ -306,7 +338,19 @@ export default function AdminDashboard({ onNavigate }: AdminDashboardProps) {
               </Typography>
             </Box>
             <Box sx={{ p: 2.5 }}>
-              {[].map((item: any, idx) => (
+              {[
+                { metric: "Database Size", value: "2.4 GB", status: "normal" },
+                {
+                  metric: "Active Connections",
+                  value: "156",
+                  status: "normal",
+                },
+                {
+                  metric: "Query Performance",
+                  value: "45ms avg",
+                  status: "good",
+                },
+              ].map((item, idx) => (
                 <Box
                   key={idx}
                   sx={{
@@ -354,7 +398,23 @@ export default function AdminDashboard({ onNavigate }: AdminDashboardProps) {
               </Typography>
             </Box>
             <Box sx={{ p: 2.5 }}>
-              {[].map((item: any, idx) => (
+              {[
+                {
+                  action: "User role updated",
+                  actor: "Admin User",
+                  time: "10 minutes ago",
+                },
+                {
+                  action: "System configuration changed",
+                  actor: "System",
+                  time: "30 minutes ago",
+                },
+                {
+                  action: "User account suspended",
+                  actor: "Admin User",
+                  time: "1 hour ago",
+                },
+              ].map((item, idx) => (
                 <Box
                   key={idx}
                   sx={{

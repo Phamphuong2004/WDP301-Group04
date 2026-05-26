@@ -1,27 +1,55 @@
-import { Box, Typography, Grid, Paper, Button, Chip } from '@mui/material';
+import { useState, useEffect } from 'react';
+import { Box, Typography, Grid, Paper, Button, Chip, CircularProgress } from '@mui/material';
+import apiClient from '../../api/apiClient';
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
 
-const trend = [{ year: 2019, count: 90 }, { year: 2020, count: 120 }, { year: 2021, count: 148 }, { year: 2022, count: 180 }, { year: 2023, count: 210 }, { year: 2024, count: 254 }, { year: 2025, count: 289 }];
-const latest = [
-  { id: 1, title: 'Adaptive Retrieval for Scientific QA', year: 2025, citations: 54 },
-  { id: 2, title: 'Benchmarking Multimodal Agents', year: 2025, citations: 38 },
-  { id: 3, title: 'Reliable Evaluation for Long-Context LLMs', year: 2024, citations: 92 },
-];
-
 export default function JournalDetail() {
+  const journalName = "Nature Machine Intelligence";
+  const [journalData, setJournalData] = useState<any>(null);
+  const [trendData, setTrendData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchJournal = async () => {
+      setLoading(true);
+      try {
+        const [journalRes, trendRes] = await Promise.all([
+          apiClient.get(`/sources/journal?query=${encodeURIComponent(journalName)}`),
+          apiClient.get(`/sources/trend?source=openalex&keyword=${encodeURIComponent(journalName)}`)
+        ]);
+        if (journalRes.data.success) setJournalData(journalRes.data.data);
+        if (trendRes.data.success) {
+          const formattedTrends = trendRes.data.trends.map((t: any) => ({
+            year: t.year,
+            count: t.publicationCount
+          }));
+          setTrendData(formattedTrends);
+        }
+      } catch (error) {
+        console.error("Failed to fetch journal data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchJournal();
+  }, []);
+
+  if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>;
   return (
     <Box>
       <Paper sx={{ p: 2.5, borderRadius: 3, mb: 2.5 }}>
-        <Typography sx={{ fontSize: '1.3rem', fontWeight: 800 }}>Nature Machine Intelligence</Typography>
-        <Typography sx={{ color: '#64748b', mb: 1 }}>Springer Nature</Typography>
+        <Typography sx={{ fontSize: '1.3rem', fontWeight: 800 }}>{journalData?.displayName || journalName}</Typography>
+        <Typography sx={{ color: '#64748b', mb: 1 }}>{journalData?.publisher || 'Springer Nature'}</Typography>
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-          <Chip label="ISSN: 2522-5839" /><Chip label="Impact Factor: 25.9" /><Chip label="Field: AI" />
+          <Chip label={`ISSN: ${journalData?.issn || '2522-5839'}`} />
+          <Chip label={`Impact Factor: ${journalData?.impactFactor || 'N/A'}`} />
+          <Chip label="Field: AI" />
         </Box>
       </Paper>
       <Grid container spacing={2.5}>
-        <Grid size={{ xs: 12, lg: 8 }}><Paper sx={{ p: 2.5, borderRadius: 3 }}><Typography sx={{ fontWeight: 700, mb: 1 }}>Publication Trend by Year</Typography><ResponsiveContainer width="100%" height={260}><LineChart data={trend}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="year" /><YAxis /><Tooltip /><Line dataKey="count" stroke="#4f46e5" strokeWidth={2} /></LineChart></ResponsiveContainer></Paper></Grid>
+        <Grid size={{ xs: 12, lg: 8 }}><Paper sx={{ p: 2.5, borderRadius: 3 }}><Typography sx={{ fontWeight: 700, mb: 1 }}>Publication Trend by Year</Typography><ResponsiveContainer width="100%" height={260}><LineChart data={trendData}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="year" /><YAxis /><Tooltip /><Line dataKey="count" stroke="#4f46e5" strokeWidth={2} /></LineChart></ResponsiveContainer></Paper></Grid>
         <Grid size={{ xs: 12, lg: 4 }}><Paper sx={{ p: 2.5, borderRadius: 3 }}><Typography sx={{ fontWeight: 700, mb: 1 }}>Actions</Typography><Button variant="contained" fullWidth>Follow Journal</Button></Paper></Grid>
-        <Grid size={{ xs: 12 }}><Paper sx={{ p: 2.5, borderRadius: 3 }}><Typography sx={{ fontWeight: 700, mb: 1 }}>Latest Papers</Typography>{latest.map((p) => <Paper key={p.id} variant="outlined" sx={{ p: 1.5, mb: 1 }}><Typography sx={{ fontWeight: 700 }}>{p.title}</Typography><Typography sx={{ fontSize: '0.82rem', color: '#64748b' }}>{p.year} • {p.citations} citations</Typography></Paper>)}</Paper></Grid>
+        <Grid size={{ xs: 12 }}><Paper sx={{ p: 2.5, borderRadius: 3 }}><Typography sx={{ fontWeight: 700, mb: 1 }}>Latest Papers</Typography>{[]}</Paper></Grid>
       </Grid>
     </Box>
   );

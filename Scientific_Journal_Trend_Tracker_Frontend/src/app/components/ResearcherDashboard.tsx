@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Box, Grid, Typography, Paper, Chip, IconButton } from "@mui/material";
 import { ArrowLeft } from "lucide-react";
 import PaperDetail, { type Paper as PaperType } from "./PaperDetail";
+import apiClient from "../../api/apiClient";
 
 interface ResearcherDashboardProps {
   onNavigate?: (section: string) => void;
@@ -11,42 +12,25 @@ export default function ResearcherDashboard({
   onNavigate,
 }: ResearcherDashboardProps) {
   const [selectedPaper, setSelectedPaper] = useState<PaperType | null>(null);
+  const [recentPubs, setRecentPubs] = useState<PaperType[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const recentPubs: PaperType[] = [
-    {
-      id: 201,
-      title: "Adaptive RAG for Scientific QA",
-      authors: ["Dr. User", "Alice Smith"],
-      journal: "ACL 2025",
-      year: 2025,
-      abstract: "An adaptive retrieval-augmented generation approach...",
-      citations: 12,
-      doi: "10.1234/acl2025.1",
-      keywords: ["RAG", "QA"],
-    },
-    {
-      id: 202,
-      title: "Efficient Transformer Compression",
-      authors: ["Dr. User", "Bob Johnson"],
-      journal: "ICLR 2025",
-      year: 2025,
-      abstract: "Novel techniques for compressing transformer models...",
-      citations: 8,
-      doi: "10.1234/iclr2025.2",
-      keywords: ["Transformers", "Compression"],
-    },
-    {
-      id: 203,
-      title: "Federated Learning in Healthcare",
-      authors: ["Dr. User"],
-      journal: "Nature Machine Intelligence",
-      year: 2025,
-      abstract: "Applying federated learning to sensitive healthcare datasets...",
-      citations: 45,
-      doi: "10.1234/nmi2025.3",
-      keywords: ["Federated Learning", "Healthcare"],
-    },
-  ];
+  useEffect(() => {
+    const fetchRecent = async () => {
+      setLoading(true);
+      try {
+        const res = await apiClient.get('/papers/search?keyword=machine learning&limit=5');
+        if (res.data.success) {
+          setRecentPubs(res.data.papers || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch recent publications", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRecent();
+  }, []);
 
   return (
     <Box>
@@ -202,8 +186,9 @@ export default function ResearcherDashboard({
               </Typography>
             </Box>
             <Box sx={{ p: 2.5 }}>
-              {recentPubs.map((pub, idx) => (
-                <Paper key={idx} onClick={() => setSelectedPaper(pub)} sx={{ p: 2, mb: 1.5, background: "rgba(102,126,234,0.05)", borderLeft: "4px solid #667eea", borderRadius: 1, cursor: "pointer", transition: "all 0.2s ease", "&:hover": { boxShadow: "0 4px 12px rgba(102,126,234,0.15)", transform: "translateX(4px)" } }}> <Typography sx={{ fontWeight: 600, mb: 0.5, color: "#4f46e5", "&:hover": { textDecoration: "underline" } }}>{pub.title}</Typography> <Box sx={{ display: "flex", gap: 2, fontSize: "0.85rem", color: "#64748b" }}> <span>{pub.journal}</span> <span>�</span> <span>{pub.year}</span> <span>�</span> <span>{pub.citations} citations</span>
+              {loading ? <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><Typography>Loading...</Typography></Box> : 
+              recentPubs.map((pub, idx) => (
+                <Paper key={idx} onClick={() => setSelectedPaper(pub)} sx={{ p: 2, mb: 1.5, background: "rgba(102,126,234,0.05)", borderLeft: "4px solid #667eea", borderRadius: 1, cursor: "pointer", transition: "all 0.2s ease", "&:hover": { boxShadow: "0 4px 12px rgba(102,126,234,0.15)", transform: "translateX(4px)" } }}> <Typography sx={{ fontWeight: 600, mb: 0.5, color: "#4f46e5", "&:hover": { textDecoration: "underline" } }}>{pub.title}</Typography> <Box sx={{ display: "flex", gap: 2, fontSize: "0.85rem", color: "#64748b" }}> <span>{pub.journal}</span> <span>•</span> <span>{pub.year}</span> <span>•</span> <span>{pub.citations} citations</span>
                   </Box>
                 </Paper>
               ))}

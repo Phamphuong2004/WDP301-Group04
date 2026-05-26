@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   Box,
   Paper,
@@ -15,53 +15,42 @@ import {
   TextField,
   Tabs,
   Tab,
+  CircularProgress,
 } from "@mui/material";
+import apiClient from "../../api/apiClient";
 
-const data = [
-  {
-    id: 1,
-    title: "Attention Is All You Need",
-    journal: "NeurIPS",
-    year: 2017,
-    citations: 98543,
-    tags: ["Transformer", "NLP"],
-    savedDate: "2025-05-12",
-  },
-  {
-    id: 2,
-    title: "Vision Transformer",
-    journal: "ICLR",
-    year: 2021,
-    citations: 43210,
-    tags: ["ViT", "CV"],
-    savedDate: "2025-05-08",
-  },
-  {
-    id: 3,
-    title: "Constitutional AI",
-    journal: "arXiv",
-    year: 2022,
-    citations: 450,
-    tags: ["AI Safety", "LLM"],
-    savedDate: "2025-05-10",
-  },
-];
-
-const keywordBookmarks = [
-  { id: 1, keyword: "LLM", papersCount: 1240, addedDate: "2025-05-10" },
-  { id: 2, keyword: "Transformer", papersCount: 840, addedDate: "2025-05-11" },
-  { id: 3, keyword: "AI Safety", papersCount: 320, addedDate: "2025-05-12" },
-];
+const keywordBookmarks: any[] = [];
 
 export default function Bookmarks() {
   const [tab, setTab] = useState(0);
   const [sort, setSort] = useState("recent");
   const [keyword, setKeyword] = useState("");
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchBookmarks = async () => {
+      setLoading(true);
+      try {
+        const res = await apiClient.get("/papers/bookmarks");
+        if (res.data.success) {
+          setData(res.data.papers || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch bookmarks:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBookmarks();
+  }, []);
 
   const filtered = useMemo(() => {
-    let list = data.filter((p) =>
-      p.tags.join(",").toLowerCase().includes(keyword.toLowerCase()),
-    );
+    let list = data.filter((p) => {
+      const tags = p.topics ? p.topics.map((t: any) => t.name || t) : p.tags || [];
+      return tags.join(",").toLowerCase().includes(keyword.toLowerCase()) || 
+             (p.title && p.title.toLowerCase().includes(keyword.toLowerCase()));
+    });
     if (sort === "recent")
       list = [...list].sort((a, b) => b.savedDate.localeCompare(a.savedDate));
     if (sort === "cited")
@@ -87,7 +76,10 @@ export default function Bookmarks() {
 
       {tab === 0 && (
         <>
-          <Paper
+          {loading && <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>}
+          {!loading && (
+            <>
+            <Paper
             sx={{
               p: 2.5,
               mb: 2.5,
@@ -206,7 +198,7 @@ export default function Bookmarks() {
                     flexWrap: "wrap",
                   }}
                 >
-                  {paper.tags.map((t) => (
+                  {paper.tags && paper.tags.map((t: string) => (
                     <Chip
                       key={t}
                       size="small"
@@ -224,6 +216,8 @@ export default function Bookmarks() {
           </Grid>
         ))}
       </Grid>
+            </>
+      )}
       </>
       )}
 

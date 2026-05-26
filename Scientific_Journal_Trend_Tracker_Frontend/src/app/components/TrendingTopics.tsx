@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Paper,
@@ -9,7 +9,9 @@ import {
   Select,
   MenuItem,
   Chip,
+  CircularProgress,
 } from "@mui/material";
+import apiClient from "../../api/apiClient";
 import {
   ResponsiveContainer,
   BarChart,
@@ -20,16 +22,41 @@ import {
   Tooltip,
 } from "recharts";
 
-const data = [
-  { topic: "LLM", value: 1543 },
-  { topic: "GenAI", value: 1287 },
-  { topic: "Quantum", value: 842 },
-  { topic: "EdgeAI", value: 723 },
-];
-
 export default function TrendingTopics() {
   const [field, setField] = useState("all");
   const [timeRange, setTimeRange] = useState("6m");
+  const [data, setData] = useState<any[]>([]);
+  const [emerging, setEmerging] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchTrends = async () => {
+      setLoading(true);
+      try {
+        const [trendRes, emergingRes] = await Promise.all([
+          apiClient.get("/trends/trending"),
+          apiClient.get("/trends/emerging")
+        ]);
+        
+        if (trendRes.data.success) {
+          setData(
+            trendRes.data.topics.map((t: any) => ({
+              topic: t.name,
+              value: t.growthRate || 0,
+            }))
+          );
+        }
+        if (emergingRes.data.success) {
+          setEmerging(emergingRes.data.topics.map((t: any) => t.name));
+        }
+      } catch (err) {
+        console.error("Failed to fetch trends", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTrends();
+  }, []);
 
   return (
     <Box>
@@ -91,6 +118,7 @@ export default function TrendingTopics() {
             >
               📊 Trending Topics
             </Typography>
+            {loading ? <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box> : (
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={data}>
                 <CartesianGrid
@@ -101,7 +129,7 @@ export default function TrendingTopics() {
                 <YAxis />
                 <Tooltip
                   contentStyle={{
-                    bgcolor: "#fff",
+                    backgroundColor: "#fff",
                     border: "1px solid #4facfe",
                     borderRadius: 8,
                   }}
@@ -109,6 +137,7 @@ export default function TrendingTopics() {
                 <Bar dataKey="value" fill="#4facfe" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
+            )}
           </Paper>
         </Grid>
         <Grid size={{ xs: 12, lg: 4 }}>
@@ -131,13 +160,9 @@ export default function TrendingTopics() {
             >
               ⚡ Emerging Keywords
             </Typography>
+            {loading ? <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}><CircularProgress size={24} /></Box> : (
             <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-              {[
-                "Tool-Augmented Reasoning",
-                "World Models",
-                "Agentic Workflow",
-                "Long Context",
-              ].map((kw) => (
+              {emerging.map((kw) => (
                 <Chip
                   key={kw}
                   label={kw}
@@ -151,6 +176,7 @@ export default function TrendingTopics() {
                 />
               ))}
             </Box>
+            )}
           </Paper>
         </Grid>
       </Grid>

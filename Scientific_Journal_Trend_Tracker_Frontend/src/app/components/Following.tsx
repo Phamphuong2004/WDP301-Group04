@@ -13,24 +13,8 @@ import {
   Chip,
 } from "@mui/material";
 
-const following = [
-  {
-    id: 1,
-    type: "journal",
-    name: "Nature Machine Intelligence",
-    stat: "18 new papers this week",
-  },
-  {
-    id: 2,
-    type: "topic",
-    name: "Large Language Models",
-    stat: "42 new papers this week",
-  },
-];
-const discover = [
-  { id: 101, type: "journal", name: "Science Robotics", stat: "Impact 9.2" },
-  { id: 102, type: "topic", name: "AI for Biology", stat: "Momentum +23%" },
-];
+const following: any[] = [];
+const discover: any[] = [];
 
 export default function Following() {
   const [tab, setTab] = useState(0);

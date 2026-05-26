@@ -23,40 +23,8 @@ interface PaperDetailProps {
   onClose: () => void;
 }
 
-const relatedPapers: Paper[] = [
-  {
-    id: 101,
-    title: 'Scaling Laws for Neural Language Models',
-    abstract: 'Empirical scaling behaviors across model, data, and compute.',
-    authors: ['Jared Kaplan', 'Sam McCandlish'],
-    journal: 'arXiv',
-    year: 2020,
-    doi: '10.48550/arXiv.2001.08361',
-    keywords: ['LLM', 'Scaling Laws'],
-    citations: 8450,
-  },
-  {
-    id: 102,
-    title: 'InstructGPT: Training Language Models to Follow Instructions',
-    abstract: 'Alignment via human feedback for instruction-following models.',
-    authors: ['Long Ouyang', 'Jeff Wu'],
-    journal: 'NeurIPS',
-    year: 2022,
-    doi: '10.48550/arXiv.2203.02155',
-    keywords: ['Alignment', 'RLHF'],
-    citations: 10050,
-  },
-];
-
-const keywordTrend = [
-  { year: 2019, count: 120 },
-  { year: 2020, count: 190 },
-  { year: 2021, count: 280 },
-  { year: 2022, count: 410 },
-  { year: 2023, count: 560 },
-  { year: 2024, count: 720 },
-  { year: 2025, count: 880 },
-];
+const relatedPapers: Paper[] = [];
+const keywordTrend: any[] = [];
 
 const buildCitation = (paper: Paper, format: 'APA' | 'MLA' | 'BibTeX') => {
   const authorText = paper.authors.join(', ');
@@ -144,7 +112,7 @@ export default function PaperDetail({ open, paper, onClose }: PaperDetailProps) 
                 <List dense>
                   {relatedPapers.map((rp) => (
                     <ListItem key={rp.id} disablePadding>
-                      <ListItemText primary={rp.title} secondary={`${rp.journal} • ${rp.year}`} />
+                      <ListItemText primary={rp.title} secondary={`${rp.journal} ï¿½ ${rp.year}`} />
                     </ListItem>
                   ))}
                 </List>

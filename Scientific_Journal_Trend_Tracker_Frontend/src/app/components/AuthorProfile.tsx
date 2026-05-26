@@ -1,73 +1,35 @@
-import { Box, Typography, Grid, Paper, Avatar, Chip, FormControl, InputLabel, Select, MenuItem, CircularProgress } from '@mui/material';
-import { useMemo, useState, useEffect } from 'react';
-import apiClient from '../../api/apiClient';
+import { Box, Typography, Grid, Paper, Avatar, Chip, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { useMemo, useState } from 'react';
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
 
-export default function AuthorProfile() {
-  const authorQuery = "Alice Chen";
-  const [authorInfo, setAuthorInfo] = useState<any>(null);
-  const [papers, setPapers] = useState<any[]>([]);
-  const [timeline, setTimeline] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+const timeline = [{ year: 2019, papers: 8 }, { year: 2020, papers: 11 }, { year: 2021, papers: 15 }, { year: 2022, papers: 18 }, { year: 2023, papers: 22 }, { year: 2024, papers: 20 }, { year: 2025, papers: 24 }];
+const papers = [
+  { id: 1, title: 'Efficient Transformer Compression', year: 2024, citations: 122, journal: 'NeurIPS' },
+  { id: 2, title: 'Instruction Tuning at Scale', year: 2025, citations: 86, journal: 'ICLR' },
+  { id: 3, title: 'Robust Multimodal Alignment', year: 2023, citations: 142, journal: 'Nature MI' },
+];
 
+export default function AuthorProfile() {
   const [sort, setSort] = useState('newest');
   const [yearFilter, setYearFilter] = useState('all');
 
-  useEffect(() => {
-    const fetchAuthorData = async () => {
-      setLoading(true);
-      try {
-        const [authorRes, papersRes] = await Promise.all([
-          apiClient.get(`/sources/author?query=${encodeURIComponent(authorQuery)}`),
-          apiClient.get(`/sources/search?keyword=${encodeURIComponent(authorQuery)}&limit=10`)
-        ]);
-        
-        if (authorRes.data.success && authorRes.data.authors?.length > 0) {
-          setAuthorInfo(authorRes.data.authors[0]);
-        }
-        
-        if (papersRes.data.success) {
-          setPapers(papersRes.data.papers || []);
-          
-          // Generate a simple timeline from papers
-          const yearCounts: Record<string, number> = {};
-          (papersRes.data.papers || []).forEach((p: any) => {
-            if (p.publicationYear) {
-              yearCounts[p.publicationYear] = (yearCounts[p.publicationYear] || 0) + 1;
-            }
-          });
-          const timelineData = Object.entries(yearCounts).map(([year, count]) => ({ year, papers: count })).sort((a: any, b: any) => a.year - b.year);
-          setTimeline(timelineData);
-        }
-      } catch (err) {
-        console.error("Failed to fetch author data", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAuthorData();
-  }, []);
-
   const filtered = useMemo(() => {
-    let list = papers.filter((p) => yearFilter === 'all' || String(p.publicationYear) === yearFilter);
-    if (sort === 'newest') list = [...list].sort((a, b) => b.publicationYear - a.publicationYear);
-    if (sort === 'cited') list = [...list].sort((a, b) => b.citationCount - a.citationCount);
+    let list = papers.filter((p) => yearFilter === 'all' || String(p.year) === yearFilter);
+    if (sort === 'newest') list = [...list].sort((a, b) => b.year - a.year);
+    if (sort === 'cited') list = [...list].sort((a, b) => b.citations - a.citations);
     return list;
   }, [sort, yearFilter]);
 
   return (
     <Box>
-      {loading ? <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box> : (
-      <>
       <Paper sx={{ p: 2.5, borderRadius: 3, mb: 2.5 }}>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-          <Avatar sx={{ width: 72, height: 72 }}>{authorInfo?.name?.charAt(0) || 'A'}</Avatar>
+          <Avatar sx={{ width: 72, height: 72 }}>AC</Avatar>
           <Box>
-            <Typography sx={{ fontSize: '1.3rem', fontWeight: 800 }}>{authorInfo?.name || authorQuery}</Typography>
-            <Typography sx={{ color: '#64748b' }}>{authorInfo?.orcid ? `ORCID: ${authorInfo.orcid}` : 'Researcher'}</Typography>
+            <Typography sx={{ fontSize: '1.3rem', fontWeight: 800 }}>Dr. Alice Chen</Typography>
+            <Typography sx={{ color: '#64748b' }}>MIT CSAIL</Typography>
             <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-              <Chip label={`Papers: ${authorInfo?.paperCount || papers.length || 0}`} />
-              <Chip label={`Citations: ${authorInfo?.citationCount || 0}`} />
+              <Chip label="h-index: 49" /><Chip label="Papers: 118" /><Chip label="Citations: 12,304" />
             </Box>
           </Box>
         </Box>
@@ -82,12 +44,10 @@ export default function AuthorProfile() {
               <FormControl size="small"><InputLabel>Sort</InputLabel><Select label="Sort" value={sort} onChange={(e) => setSort(e.target.value)}><MenuItem value="newest">Newest</MenuItem><MenuItem value="cited">Most Cited</MenuItem></Select></FormControl>
               <FormControl size="small"><InputLabel>Year</InputLabel><Select label="Year" value={yearFilter} onChange={(e) => setYearFilter(e.target.value)}><MenuItem value="all">All</MenuItem><MenuItem value="2025">2025</MenuItem><MenuItem value="2024">2024</MenuItem><MenuItem value="2023">2023</MenuItem></Select></FormControl>
             </Box>
-            {filtered.map((p) => <Paper key={p.id} variant="outlined" sx={{ p: 1.5, mb: 1 }}><Typography sx={{ fontWeight: 700 }}>{p.title}</Typography><Typography sx={{ fontSize: '0.82rem', color: '#64748b' }}>{p.journalName || 'Unknown Journal'} â€¢ {p.publicationYear} â€¢ {p.citationCount} citations</Typography></Paper>)}
+            {filtered.map((p) => <Paper key={p.id} variant="outlined" sx={{ p: 1.5, mb: 1 }}><Typography sx={{ fontWeight: 700 }}>{p.title}</Typography><Typography sx={{ fontSize: '0.82rem', color: '#64748b' }}>{p.journal} • {p.year} • {p.citations} citations</Typography></Paper>)}
           </Paper>
         </Grid>
       </Grid>
-      </>
-      )}
     </Box>
   );
 }

@@ -56,7 +56,68 @@ interface ReviewItem {
   liked?: boolean;
 }
 
-const INITIAL_REVIEWS: ReviewItem[] = [];
+const INITIAL_REVIEWS: ReviewItem[] = [
+  {
+    id: 1,
+    name: "PGS.TS Nguyễn Minh Tuấn",
+    role: "Nhà nghiên cứu",
+    uni: "Trưởng khoa CNTT, ĐH Bách Khoa HN",
+    avatar: "N",
+    color: "#4f46e5",
+    text: "SciTrend đã thay đổi hoàn toàn cách tôi theo dõi các công bố mới. Tính năng phân tích xu hướng và biểu đồ trích dẫn cực kỳ hữu ích cho các dự án nghiên cứu của khoa chúng tôi.",
+    rating: 5,
+    date: "2026-05-18",
+    likes: 24,
+  },
+  {
+    id: 2,
+    name: "ThS. Lê Thu Hà",
+    role: "Giảng viên & Sinh viên",
+    uni: "Giảng viên, ĐH Kinh tế Quốc dân",
+    avatar: "L",
+    color: "#06b6d4",
+    text: "Bộ lọc tìm kiếm nâng cao theo Scopus/ISI giúp tôi tìm được tài liệu tham khảo chuẩn xác cho từng môn học trong vài giây. Giao diện mượt mà và trực quan, sinh viên của tôi phản hồi rất tích cực.",
+    rating: 5,
+    date: "2026-05-14",
+    likes: 18,
+  },
+  {
+    id: 3,
+    name: "Trần Quốc Bảo",
+    role: "Giảng viên & Sinh viên",
+    uni: "NCS Tiến sĩ, ĐH Quốc gia TP.HCM",
+    avatar: "T",
+    color: "#10b981",
+    text: "Là sinh viên nghiên cứu sinh, SciTrend là công cụ không thể thiếu. Tính năng bookmarks và following giúp tôi luôn cập nhật lĩnh vực của mình mà không bỏ lỡ công trình mới nào.",
+    rating: 5,
+    date: "2026-05-10",
+    likes: 15,
+  },
+  {
+    id: 4,
+    name: "TS. Phạm Anh Dũng",
+    role: "Nhà nghiên cứu",
+    uni: "Viện Hàn lâm Khoa học & Công nghệ VN",
+    avatar: "P",
+    color: "#f59e0b",
+    text: "Tôi cực kỳ đánh giá cao khả năng tóm tắt bài báo bằng AI và hệ thống cảnh báo từ khóa thông minh. Tiết kiệm tới 70% thời gian đọc lướt bài báo của tôi.",
+    rating: 4,
+    date: "2026-05-05",
+    likes: 9,
+  },
+  {
+    id: 5,
+    name: "Nguyễn Hoàng Nam",
+    role: "Quản trị viên",
+    uni: "Quản trị thư viện, Đại học FPT",
+    avatar: "H",
+    color: "#ec4899",
+    text: "Tính năng quản lý tài khoản theo tên miền email tổ chức giúp thư viện trường dễ dàng phân quyền và theo dõi lưu lượng truy cập API của toàn bộ sinh viên, giảng viên.",
+    rating: 5,
+    date: "2026-04-28",
+    likes: 11,
+  },
+];
 
 function FloatingOrb({
   size,

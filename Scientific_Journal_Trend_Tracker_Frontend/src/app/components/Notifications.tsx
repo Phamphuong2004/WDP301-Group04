@@ -11,7 +11,72 @@ import {
 } from "@mui/material";
 import { Bell, BookOpen, TrendingUp, Info, Check, Trash2 } from "lucide-react";
 
-const data: any[] = [];
+const data = [
+  {
+    id: 1,
+    type: "papers",
+    title: "New LLM paper",
+    message: "A new paper matches your interest.",
+    time: "2h ago",
+    read: false,
+  },
+  {
+    id: 2,
+    type: "trends",
+    title: "Topic momentum up",
+    message: "Generative AI increased by 16%.",
+    time: "4h ago",
+    read: false,
+  },
+  {
+    id: 3,
+    type: "system",
+    title: "Sync completed",
+    message: "Crossref sync finished successfully.",
+    time: "8h ago",
+    read: true,
+  },
+  {
+    id: 4,
+    type: "papers",
+    title: "Author update",
+    message: "A followed author published new work.",
+    time: "1d ago",
+    read: true,
+  },
+  {
+    id: 5,
+    type: "trends",
+    title: "Emerging keyword",
+    message: "Tool-augmented reasoning is rising.",
+    time: "1d ago",
+    read: false,
+  },
+  {
+    id: 6,
+    type: "system",
+    title: "Security notice",
+    message: "Password policy updated.",
+    time: "2d ago",
+    read: true,
+  },
+  {
+    id: 7,
+    type: "papers",
+    title: "Journal release",
+    message: "Nature MI published latest issue.",
+    time: "2d ago",
+    read: false,
+  },
+  {
+    id: 8,
+    type: "trends",
+    title: "Field alert",
+    message: "Biology AI submissions surged.",
+    time: "3d ago",
+    read: true,
+  },
+];
 
 interface NotificationsProps {
   onMarkAllRead?: () => void;

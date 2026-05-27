@@ -1,3 +1,5 @@
+const isProduction = process.env.NODE_ENV === "production";
+
 const swaggerSpec = {
   openapi: "3.0.3",
   info: {
@@ -8,12 +10,12 @@ const swaggerSpec = {
   },
   servers: [
     {
-      url: "http://localhost:5000",
-      description: "Local development server",
-    },
-    {
-      url: "https://wdp301-group04-journal-trends.up.railway.app",
-      description: "Production server (Railway)",
+      url: isProduction
+        ? "https://wdp301-group04-journal-trends.up.railway.app"
+        : "http://localhost:5000",
+      description: isProduction
+        ? "Production server (Railway)"
+        : "Local development server",
     },
   ],
   tags: [

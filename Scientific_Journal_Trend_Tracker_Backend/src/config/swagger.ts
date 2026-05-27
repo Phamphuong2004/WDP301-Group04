@@ -11,6 +11,10 @@ const swaggerSpec = {
       url: "http://localhost:5000",
       description: "Local development server",
     },
+    {
+      url: "https://wdp301-group04-journal-trends.up.railway.app",
+      description: "Production server (Railway)",
+    },
   ],
   tags: [
     { name: "Health" },

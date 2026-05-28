@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from "mongoose";
+﻿import mongoose, { Schema, Document } from "mongoose";
 
 export interface INotification extends Document {
   userId: mongoose.Types.ObjectId;
@@ -17,7 +17,7 @@ const notificationSchema = new Schema<INotification>(
   {
     userId: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: "user",
       required: true,
     },
     title: {
@@ -52,3 +52,5 @@ export default mongoose.model<INotification>(
   "Notification",
   notificationSchema,
 );
+
+

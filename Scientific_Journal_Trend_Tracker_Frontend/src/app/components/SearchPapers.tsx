@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Typography,
@@ -15,45 +15,14 @@ import {
   InputLabel,
   Paper,
   Pagination,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
 import { Search, User, Calendar, BookOpen, Quote } from "lucide-react";
 import PaperDetail, { type Paper as PaperType } from "./PaperDetail";
+import { getPapers, searchPapers as searchPapersAPI } from "../../services/api";
 
-const papers: PaperType[] = [
-  {
-    id: 1,
-    title: "Constitutional AI: Harmlessness from AI Feedback",
-    authors: ["Yuntao Bai", "Saurav Kadavath"],
-    journal: "arXiv",
-    year: 2022,
-    abstract: "Training harmless assistants with AI feedback.",
-    citations: 450,
-    doi: "10.48550/arXiv.2212.08073",
-    keywords: ["AI Safety", "LLM", "RLHF"],
-  },
-  {
-    id: 2,
-    title: "Attention Is All You Need",
-    authors: ["Ashish Vaswani", "Noam Shazeer"],
-    journal: "NeurIPS",
-    year: 2017,
-    abstract: "Transformer architecture for sequence modeling.",
-    citations: 98500,
-    doi: "10.48550/arXiv.1706.03762",
-    keywords: ["Transformer", "NLP"],
-  },
-  {
-    id: 3,
-    title: "Language Models are Few-Shot Learners",
-    authors: ["Tom Brown", "Benjamin Mann"],
-    journal: "NeurIPS",
-    year: 2020,
-    abstract: "Large-scale language models and in-context learning.",
-    citations: 24300,
-    doi: "10.48550/arXiv.2005.14165",
-    keywords: ["GPT-3", "LLM"],
-  },
-];
+const papers: PaperType[] = [];
 
 export default function SearchPapers() {
   const [query, setQuery] = useState("");
@@ -65,10 +34,70 @@ export default function SearchPapers() {
   const [sort, setSort] = useState("relevant");
   const [page, setPage] = useState(1);
   const [selectedPaper, setSelectedPaper] = useState<PaperType | null>(null);
+  const [results, setResults] = useState<PaperType[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  // Tải danh sách ban đầu
+  useEffect(() => {
+    const fetchInitial = async () => {
+      setLoading(true);
+      try {
+        const res = await getPapers(1, 50);
+        const mapped: PaperType[] = res.papers.map((p: any) => ({
+          id: p._id,
+          title: p.title,
+          authors: p.authors ?? [],
+          journal: p.journal?.name ?? "",
+          year: p.publicationYear ?? 0,
+          abstract: p.abstract ?? "",
+          citations: p.citations ?? 0,
+          doi: p.doi ?? "",
+          keywords: (p.keywords ?? []).map((k: any) => k.name ?? k),
+        }));
+        setResults(mapped);
+      } catch (err: any) {
+        setError(err.message || "Failed to load papers");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchInitial();
+  }, []);
+
+  // Tìm kiếm khi query thay đổi (debounce 500ms)
+  useEffect(() => {
+    if (!query.trim()) return;
+    const timer = setTimeout(async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const res = await searchPapersAPI(query);
+        const mapped: PaperType[] = res.map((p: any) => ({
+          id: p._id,
+          title: p.title,
+          authors: p.authors ?? [],
+          journal: p.journal?.name ?? "",
+          year: p.publicationYear ?? 0,
+          abstract: p.abstract ?? "",
+          citations: p.citations ?? 0,
+          doi: p.doi ?? "",
+          keywords: (p.keywords ?? []).map((k: any) => k.name ?? k),
+        }));
+        setResults(mapped);
+      } catch (err: any) {
+        setError(err.message || "Search failed");
+      } finally {
+        setLoading(false);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [query]);
 
   const filtered = useMemo(() => {
-    let list = papers.filter(
+    let list = results.filter(
       (p) =>
+        !query.trim() ||
         p.title.toLowerCase().includes(query.toLowerCase()) ||
         p.authors.join(",").toLowerCase().includes(query.toLowerCase()),
     );
@@ -91,7 +120,7 @@ export default function SearchPapers() {
     if (sort === "cited")
       list = [...list].sort((a, b) => b.citations - a.citations);
     return list;
-  }, [query, author, journal, field, yearRange, citationRange, sort]);
+  }, [results, query, author, journal, field, yearRange, citationRange, sort]);
 
   const pageSize = 12;
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));

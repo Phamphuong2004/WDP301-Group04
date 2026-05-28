@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from "mongoose";
+﻿import mongoose, { Schema, Document } from "mongoose";
 
 export interface TrackedRun {
   analysisRunId: mongoose.Types.ObjectId;
@@ -52,7 +52,7 @@ const userSchema = new Schema<IUser>(
     role: {
       type: String,
       enum: ["admin", "researcher", "user"],
-      default: "user",
+      default: "researcher",
     },
     institution: String,
     bio: String,
@@ -105,4 +105,6 @@ const userSchema = new Schema<IUser>(
   },
 );
 
-export default mongoose.model<IUser>("User", userSchema);
+export default mongoose.model<IUser>("user", userSchema);
+
+

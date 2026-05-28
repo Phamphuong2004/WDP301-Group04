@@ -1,7 +1,23 @@
-import { useState } from "react";
-import { Box, Grid, Typography, Paper, Chip, IconButton } from "@mui/material";
+import { useState, useEffect } from "react";
+import {
+  Box,
+  Grid,
+  Typography,
+  Paper,
+  Chip,
+  IconButton,
+  CircularProgress,
+  Alert,
+} from "@mui/material";
 import { ArrowLeft } from "lucide-react";
 import PaperDetail, { type Paper as PaperType } from "./PaperDetail";
+import {
+  getPapers,
+  getTrendingKeywords,
+  getCurrentUser,
+  type Paper as ApiPaper,
+  type Keyword,
+} from "../../services/api";
 
 interface ResearcherDashboardProps {
   onNavigate?: (section: string) => void;
@@ -11,42 +27,47 @@ export default function ResearcherDashboard({
   onNavigate,
 }: ResearcherDashboardProps) {
   const [selectedPaper, setSelectedPaper] = useState<PaperType | null>(null);
+  const [recentPubs, setRecentPubs] = useState<ApiPaper[]>([]);
+  const [trendingKeywords, setTrendingKeywords] = useState<Keyword[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const recentPubs: PaperType[] = [
-    {
-      id: 201,
-      title: "Adaptive RAG for Scientific QA",
-      authors: ["Dr. User", "Alice Smith"],
-      journal: "ACL 2025",
-      year: 2025,
-      abstract: "An adaptive retrieval-augmented generation approach...",
-      citations: 12,
-      doi: "10.1234/acl2025.1",
-      keywords: ["RAG", "QA"],
-    },
-    {
-      id: 202,
-      title: "Efficient Transformer Compression",
-      authors: ["Dr. User", "Bob Johnson"],
-      journal: "ICLR 2025",
-      year: 2025,
-      abstract: "Novel techniques for compressing transformer models...",
-      citations: 8,
-      doi: "10.1234/iclr2025.2",
-      keywords: ["Transformers", "Compression"],
-    },
-    {
-      id: 203,
-      title: "Federated Learning in Healthcare",
-      authors: ["Dr. User"],
-      journal: "Nature Machine Intelligence",
-      year: 2025,
-      abstract: "Applying federated learning to sensitive healthcare datasets...",
-      citations: 45,
-      doi: "10.1234/nmi2025.3",
-      keywords: ["Federated Learning", "Healthcare"],
-    },
-  ];
+  // Fetch data on component mount
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Fetch papers
+        const papersData = await getPapers(1, 5);
+        setRecentPubs(papersData.papers || []);
+
+        // Fetch trending keywords
+        const keywordsData = await getTrendingKeywords(10);
+        setTrendingKeywords(keywordsData || []);
+
+        // Fetch current user
+        try {
+          const userData = await getCurrentUser();
+          setCurrentUser(userData);
+        } catch (err) {
+          // User might not be authenticated, that's ok
+          console.log("Not authenticated");
+        }
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to load dashboard data",
+        );
+        console.error("Dashboard data fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
 
   return (
     <Box>
@@ -77,111 +98,118 @@ export default function ResearcherDashboard({
         </IconButton>
       </Box>
 
-      {/* Welcome Section */}
-      <Paper
-        sx={{
-          p: 3,
-          mb: 3,
-          borderRadius: 3,
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-          color: "#fff",
-        }}
-      >
-        <Typography sx={{ fontSize: "1.5rem", fontWeight: 700 }}>
-          Welcome back, Dr. User
-        </Typography>
-        <Typography sx={{ opacity: 0.9, mt: 0.5 }}>
-          Here's your research dashboard overview
-        </Typography>
-      </Paper>
+      {/* Loading State */}
+      {loading && (
+        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "400px" }}>
+          <CircularProgress />
+        </Box>
+      )}
 
-      {/* Key Metrics */}
-      <Grid container spacing={2.5} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+      {/* Error State */}
+      {error && !loading && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}. Backend server might not be running. Start it with: <code>npm start</code> in the backend folder
+        </Alert>
+      )}
+
+      {!loading && (
+        <>
+          {/* Welcome Section */}
           <Paper
             sx={{
-              p: 2.5,
-              borderRadius: 2,
+              p: 3,
+              mb: 3,
+              borderRadius: 3,
               background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
               color: "#fff",
-              textAlign: "center",
             }}
           >
-            <Typography sx={{ fontSize: "0.85rem", opacity: 0.9 }}>
-              Total Publications
+            <Typography sx={{ fontSize: "1.5rem", fontWeight: 700 }}>
+              Welcome back, {currentUser?.fullName || "Dr. User"}
             </Typography>
-            <Typography sx={{ fontSize: "2.5rem", fontWeight: 800, mt: 0.5 }}>
-              23
-            </Typography>
-            <Typography sx={{ fontSize: "0.75rem", opacity: 0.8, mt: 0.5 }}>
-              +2 this month
+            <Typography sx={{ opacity: 0.9, mt: 0.5 }}>
+              Here's your research dashboard overview
             </Typography>
           </Paper>
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <Paper
-            sx={{
-              p: 2.5,
-              borderRadius: 2,
-              background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-              color: "#fff",
-              textAlign: "center",
-            }}
-          >
-            <Typography sx={{ fontSize: "0.85rem", opacity: 0.9 }}>
-              Total Citations
-            </Typography>
-            <Typography sx={{ fontSize: "2.5rem", fontWeight: 800, mt: 0.5 }}>
-              1,847
-            </Typography>
-            <Typography sx={{ fontSize: "0.75rem", opacity: 0.8, mt: 0.5 }}>
-              h-index: 12
-            </Typography>
-          </Paper>
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <Paper
-            sx={{
-              p: 2.5,
-              borderRadius: 2,
-              background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-              color: "#fff",
-              textAlign: "center",
-            }}
-          >
-            <Typography sx={{ fontSize: "0.85rem", opacity: 0.9 }}>
-              Active Projects
-            </Typography>
-            <Typography sx={{ fontSize: "2.5rem", fontWeight: 800, mt: 0.5 }}>
-              5
-            </Typography>
-            <Typography sx={{ fontSize: "0.75rem", opacity: 0.8, mt: 0.5 }}>
-              2 under review
-            </Typography>
-          </Paper>
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <Paper
-            sx={{
-              p: 2.5,
-              borderRadius: 2,
-              background: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
-              color: "#fff",
-              textAlign: "center",
-            }}
-          >
-            <Typography sx={{ fontSize: "0.85rem", opacity: 0.9 }}>
-              Collaborators
-            </Typography>
-            <Typography sx={{ fontSize: "2.5rem", fontWeight: 800, mt: 0.5 }}>
-              28
-            </Typography>
-            <Typography sx={{ fontSize: "0.75rem", opacity: 0.8, mt: 0.5 }}>
-              Across 12 institutions
-            </Typography>
-          </Paper>
-        </Grid>
-      </Grid>
+
+          {/* Key Metrics */}
+          <Grid container spacing={2.5} sx={{ mb: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <Paper
+                sx={{
+                  p: 2.5,
+                  borderRadius: 2,
+                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  color: "#fff",
+                  textAlign: "center",
+                }}
+              >
+                <Typography sx={{ fontSize: "0.85rem", opacity: 0.9 }}>
+                  Total Publications
+                </Typography>
+                <Typography sx={{ fontSize: "2.5rem", fontWeight: 800, mt: 0.5 }}>
+                  {recentPubs.length}
+                </Typography>
+              </Paper>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <Paper
+                sx={{
+                  p: 2.5,
+                  borderRadius: 2,
+                  background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+                  color: "#fff",
+                  textAlign: "center",
+                }}
+              >
+                <Typography sx={{ fontSize: "0.85rem", opacity: 0.9 }}>
+                  Total Citations
+                </Typography>
+                <Typography sx={{ fontSize: "2.5rem", fontWeight: 800, mt: 0.5 }}>
+                  {recentPubs.reduce((sum, p) => sum + (p.citations || 0), 0)}
+                </Typography>
+                <Typography sx={{ fontSize: "0.75rem", opacity: 0.8, mt: 0.5 }}>
+                  h-index: {Math.floor(Math.sqrt(recentPubs.reduce((sum, p) => sum + (p.citations || 0), 0)))}
+                </Typography>
+              </Paper>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <Paper
+                sx={{
+                  p: 2.5,
+                  borderRadius: 2,
+                  background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+                  color: "#fff",
+                  textAlign: "center",
+                }}
+              >
+                <Typography sx={{ fontSize: "0.85rem", opacity: 0.9 }}>
+                  Trending Keywords
+                </Typography>
+                <Typography sx={{ fontSize: "2.5rem", fontWeight: 800, mt: 0.5 }}>
+                  {trendingKeywords.length}
+                </Typography>
+              </Paper>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <Paper
+                sx={{
+                  p: 2.5,
+                  borderRadius: 2,
+                  background: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+                  color: "#fff",
+                  textAlign: "center",
+                }}
+              >
+                <Typography sx={{ fontSize: "0.85rem", opacity: 0.9 }}>
+                  User Role
+                </Typography>
+                <Typography sx={{ fontSize: "2.5rem", fontWeight: 800, mt: 0.5 }}>
+                  {currentUser?.role ? currentUser.role.charAt(0).toUpperCase() : "?"}
+                </Typography>
+              </Paper>
+            </Grid>
+          </Grid>
 
       {/* Main Content */}
       <Grid container spacing={2.5}>
@@ -203,7 +231,56 @@ export default function ResearcherDashboard({
             </Box>
             <Box sx={{ p: 2.5 }}>
               {recentPubs.map((pub, idx) => (
-                <Paper key={idx} onClick={() => setSelectedPaper(pub)} sx={{ p: 2, mb: 1.5, background: "rgba(102,126,234,0.05)", borderLeft: "4px solid #667eea", borderRadius: 1, cursor: "pointer", transition: "all 0.2s ease", "&:hover": { boxShadow: "0 4px 12px rgba(102,126,234,0.15)", transform: "translateX(4px)" } }}> <Typography sx={{ fontWeight: 600, mb: 0.5, color: "#4f46e5", "&:hover": { textDecoration: "underline" } }}>{pub.title}</Typography> <Box sx={{ display: "flex", gap: 2, fontSize: "0.85rem", color: "#64748b" }}> <span>{pub.journal}</span> <span>�</span> <span>{pub.year}</span> <span>�</span> <span>{pub.citations} citations</span>
+                <Paper
+                  key={idx}
+                  onClick={() => setSelectedPaper({
+                    id: pub._id as any,
+                    title: pub.title,
+                    authors: pub.authors,
+                    journal: pub.journal?.name || "Unknown",
+                    year: pub.publicationYear,
+                    abstract: pub.abstract,
+                    citations: pub.citations || 0,
+                    doi: pub.doi,
+                    keywords: pub.keywords?.map(k => k.name) || []
+                  })}
+                  sx={{
+                    p: 2,
+                    mb: 1.5,
+                    background: "rgba(102,126,234,0.05)",
+                    borderLeft: "4px solid #667eea",
+                    borderRadius: 1,
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                      boxShadow: "0 4px 12px rgba(102,126,234,0.15)",
+                      transform: "translateX(4px)",
+                    },
+                  }}
+                >
+                  {" "}
+                  <Typography
+                    sx={{
+                      fontWeight: 600,
+                      mb: 0.5,
+                      color: "#4f46e5",
+                      "&:hover": { textDecoration: "underline" },
+                    }}
+                  >
+                    {pub.title}
+                  </Typography>{" "}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      gap: 2,
+                      fontSize: "0.85rem",
+                      color: "#64748b",
+                    }}
+                  >
+                    {" "}
+                    <span>{pub.journal?.name || "Unknown Journal"}</span> <span>•</span>{" "}
+                    <span>{pub.publicationYear}</span> <span>•</span>{" "}
+                    <span>{pub.citations || 0} citations</span>
                   </Box>
                 </Paper>
               ))}
@@ -225,67 +302,53 @@ export default function ResearcherDashboard({
               </Typography>
             </Box>
             <Box sx={{ p: 2.5 }}>
-              {[
-                {
-                  event: "ICML 2025 Submission",
-                  daysLeft: 12,
-                  type: "Conference",
-                },
-                {
-                  event: "Journal Review Due",
-                  daysLeft: 5,
-                  type: "Review",
-                },
-                {
-                  event: "Grant Proposal Deadline",
-                  daysLeft: 21,
-                  type: "Grant",
-                },
-              ].map((item, idx) => (
-                <Box
-                  key={idx}
-                  sx={{
-                    p: 2,
-                    mb: 1.5,
-                    background:
-                      item.daysLeft <= 5
-                        ? "rgba(245,87,108,0.1)"
-                        : "rgba(79,184,254,0.1)",
-                    borderLeft: `4px solid ${
-                      item.daysLeft <= 5 ? "#f5576c" : "#00f2fe"
-                    }`,
-                    borderRadius: 1,
-                  }}
-                >
+              {([] as { event: string; daysLeft: number; type: string }[]).map(
+                (item, idx) => (
                   <Box
+                    key={idx}
                     sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      mb: 0.5,
+                      p: 2,
+                      mb: 1.5,
+                      background:
+                        item.daysLeft <= 5
+                          ? "rgba(245,87,108,0.1)"
+                          : "rgba(79,184,254,0.1)",
+                      borderLeft: `4px solid ${
+                        item.daysLeft <= 5 ? "#f5576c" : "#00f2fe"
+                      }`,
+                      borderRadius: 1,
                     }}
                   >
-                    <Typography sx={{ fontWeight: 600 }}>
-                      {item.event}
-                    </Typography>
-                    <Chip
-                      label={`${item.daysLeft}d left`}
-                      size="small"
+                    <Box
                       sx={{
-                        bgcolor:
-                          item.daysLeft <= 5
-                            ? "rgba(245,87,108,0.2)"
-                            : "rgba(79,184,254,0.2)",
-                        color: item.daysLeft <= 5 ? "#f5576c" : "#00f2fe",
-                        fontWeight: 600,
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        mb: 0.5,
                       }}
-                    />
+                    >
+                      <Typography sx={{ fontWeight: 600 }}>
+                        {item.event}
+                      </Typography>
+                      <Chip
+                        label={`${item.daysLeft}d left`}
+                        size="small"
+                        sx={{
+                          bgcolor:
+                            item.daysLeft <= 5
+                              ? "rgba(245,87,108,0.2)"
+                              : "rgba(79,184,254,0.2)",
+                          color: item.daysLeft <= 5 ? "#f5576c" : "#00f2fe",
+                          fontWeight: 600,
+                        }}
+                      />
+                    </Box>
+                    <Typography sx={{ fontSize: "0.85rem", color: "#64748b" }}>
+                      {item.type}
+                    </Typography>
                   </Box>
-                  <Typography sx={{ fontSize: "0.85rem", color: "#64748b" }}>
-                    {item.type}
-                  </Typography>
-                </Box>
-              ))}
+                ),
+              )}
             </Box>
           </Paper>
         </Grid>
@@ -307,18 +370,9 @@ export default function ResearcherDashboard({
               </Typography>
             </Box>
             <Box sx={{ p: 2.5 }}>
-              {[
-                {
-                  name: "Prof. Jane Smith",
-                  affiliation: "MIT",
-                  status: "In progress",
-                },
-                {
-                  name: "Dr. John Lee",
-                  affiliation: "Stanford",
-                  status: "Planning",
-                },
-              ].map((collab, idx) => (
+              {(
+                [] as { name: string; affiliation: string; status: string }[]
+              ).map((collab, idx) => (
                 <Box
                   key={idx}
                   sx={{
@@ -368,14 +422,7 @@ export default function ResearcherDashboard({
               </Typography>
             </Box>
             <Box sx={{ p: 2.5, display: "flex", flexWrap: "wrap", gap: 1 }}>
-              {[
-                "Machine Learning",
-                "NLP",
-                "Computer Vision",
-                "Federated Learning",
-                "AI Safety",
-                "Explainability",
-              ].map((area, idx) => (
+              {([] as string[]).map((area, idx) => (
                 <Chip
                   key={idx}
                   label={area}
@@ -391,7 +438,9 @@ export default function ResearcherDashboard({
           </Paper>
         </Grid>
       </Grid>
-      
+        </>
+      )}
+
       <PaperDetail
         open={Boolean(selectedPaper)}
         paper={selectedPaper}
@@ -400,5 +449,3 @@ export default function ResearcherDashboard({
     </Box>
   );
 }
-
-

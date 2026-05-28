@@ -13,7 +13,8 @@ import {
   Menu,
   MenuItem,
 } from "@mui/material";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getCurrentUser } from "../../services/api";
 import {
   LayoutDashboard,
   Search,
@@ -125,6 +126,23 @@ export default function Sidebar({
   currentRole,
   unreadCount,
 }: SidebarProps) {
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    getCurrentUser()
+      .then(setCurrentUser)
+      .catch((err) => console.log("Sidebar current user fetch error", err));
+  }, []);
+
+  const normalizeRole = (role: string): string => {
+    const r = role.toLowerCase();
+    if (r === "admin") return "System Administrator";
+    if (r === "researcher") return "Researcher";
+    if (r === "user") return "Lecturer/Student";
+    if (r === "system administrator") return "System Administrator";
+    if (r === "lecturer/student") return "Lecturer/Student";
+    return role;
+  };
   const filteredMainNav = mainNav.filter((item) =>
     item.roles.includes(currentRole),
   );
@@ -321,12 +339,12 @@ export default function Sidebar({
             sx={{
               width: 32,
               height: 32,
-              bgcolor: roles.find((r) => r.name === currentRole)?.color,
+              bgcolor: roles.find((r) => r.name === normalizeRole(currentUser?.role || currentRole))?.color || "#4f46e5",
               fontSize: "0.85rem",
               fontWeight: 700,
             }}
           >
-            {currentRole.charAt(0)}
+            {(currentUser?.fullName || "Dr. User").charAt(0).toUpperCase()}
           </Avatar>
           <Box sx={{ flex: 1 }}>
             <Typography
@@ -337,7 +355,7 @@ export default function Sidebar({
                 lineHeight: 1,
               }}
             >
-              Dr. User
+              {currentUser?.fullName || "Dr. User"}
             </Typography>
             <Typography
               sx={{
@@ -346,7 +364,7 @@ export default function Sidebar({
                 mt: 0.5,
               }}
             >
-              {currentRole}
+              {normalizeRole(currentUser?.role || currentRole)}
             </Typography>
           </Box>
         </Box>

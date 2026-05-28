@@ -23,6 +23,16 @@ interface ResearcherDashboardProps {
   onNavigate?: (section: string) => void;
 }
 
+export const normalizeRole = (role: string): string => {
+  const r = role.toLowerCase();
+  if (r === "admin") return "System Administrator";
+  if (r === "researcher") return "Researcher";
+  if (r === "user") return "Lecturer/Student";
+  if (r === "system administrator") return "System Administrator";
+  if (r === "lecturer/student") return "Lecturer/Student";
+  return role;
+};
+
 export default function ResearcherDashboard({
   onNavigate,
 }: ResearcherDashboardProps) {
@@ -168,9 +178,6 @@ export default function ResearcherDashboard({
                 <Typography sx={{ fontSize: "2.5rem", fontWeight: 800, mt: 0.5 }}>
                   {recentPubs.reduce((sum, p) => sum + (p.citations || 0), 0)}
                 </Typography>
-                <Typography sx={{ fontSize: "0.75rem", opacity: 0.8, mt: 0.5 }}>
-                  h-index: {Math.floor(Math.sqrt(recentPubs.reduce((sum, p) => sum + (p.citations || 0), 0)))}
-                </Typography>
               </Paper>
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -204,8 +211,8 @@ export default function ResearcherDashboard({
                 <Typography sx={{ fontSize: "0.85rem", opacity: 0.9 }}>
                   User Role
                 </Typography>
-                <Typography sx={{ fontSize: "2.5rem", fontWeight: 800, mt: 0.5 }}>
-                  {currentUser?.role ? currentUser.role.charAt(0).toUpperCase() : "?"}
+                <Typography sx={{ fontSize: "1.4rem", fontWeight: 800, mt: 1.5 }}>
+                  {currentUser?.role ? normalizeRole(currentUser.role) : "?"}
                 </Typography>
               </Paper>
             </Grid>

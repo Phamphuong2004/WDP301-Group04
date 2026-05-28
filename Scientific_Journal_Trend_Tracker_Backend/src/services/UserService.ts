@@ -1,4 +1,9 @@
-﻿import User from "../models/User";
+import User from "../models/User";
+import Paper from "../models/Paper";
+import Journal from "../models/Journal";
+import Topic from "../models/Topic";
+import Keyword from "../models/Keyword";
+import AnalysisRun from "../models/AnalysisRun";
 import bcrypt from "bcryptjs";
 
 export class UserService {
@@ -132,6 +137,44 @@ export class UserService {
       .sort({ lastLogin: -1 });
 
     return users;
+  }
+
+  static async getAdminStats() {
+    const [
+      totalUsers,
+      totalPapers,
+      totalJournals,
+      totalTopics,
+      totalKeywords,
+      totalAnalysisRuns,
+      researchers,
+      users,
+      admins
+    ] = await Promise.all([
+      User.countDocuments(),
+      Paper.countDocuments(),
+      Journal.countDocuments(),
+      Topic.countDocuments(),
+      Keyword.countDocuments(),
+      AnalysisRun.countDocuments(),
+      User.countDocuments({ role: "researcher" }),
+      User.countDocuments({ role: "user" }),
+      User.countDocuments({ role: "admin" })
+    ]);
+
+    return {
+      users: {
+        total: totalUsers,
+        researchers,
+        lecturersStudents: users,
+        admins
+      },
+      papers: totalPapers,
+      journals: totalJournals,
+      topics: totalTopics,
+      keywords: totalKeywords,
+      analysisRuns: totalAnalysisRuns
+    };
   }
 }
 

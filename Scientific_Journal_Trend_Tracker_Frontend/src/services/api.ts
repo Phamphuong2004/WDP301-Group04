@@ -6,7 +6,7 @@
  * Khi cần thay đổi base URL (ví dụ deploy production), chỉ cần sửa API_BASE_URL.
  */
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+export const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:5000/api";
 
 // ─── Helper: lấy token từ localStorage ───
 const getToken = (): string | null => localStorage.getItem("token");
@@ -373,6 +373,28 @@ export interface User {
   role: string;
   status?: string;
   createdAt?: string;
+}
+
+export interface AdminStats {
+  users: {
+    total: number;
+    researchers: number;
+    lecturersStudents: number;
+    admins: number;
+  };
+  papers: number;
+  journals: number;
+  topics: number;
+  keywords: number;
+  analysisRuns: number;
+}
+
+/** GET /api/users/admin/stats (Admin only) */
+export async function getAdminStats(): Promise<AdminStats> {
+  const res = await fetch(`${API_BASE_URL}/users/admin/stats`, {
+    headers: authHeaders(),
+  });
+  return handleResponse<AdminStats>(res);
 }
 
 /** GET /api/users  (Admin only) */

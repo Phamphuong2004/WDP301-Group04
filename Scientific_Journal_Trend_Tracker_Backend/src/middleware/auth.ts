@@ -25,9 +25,9 @@ export const authMiddleware = (
 
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET || "secret",
+      process.env.JWT_SECRET || "your-secret-key",
     ) as any;
-    req.userId = decoded.id;
+    req.userId = decoded.userId || decoded.id;
     req.userRole = decoded.role;
     next();
   } catch (error) {

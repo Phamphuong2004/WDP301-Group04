@@ -11,6 +11,7 @@ import {
   Divider,
 } from "@mui/material";
 import { TrendingUp, Menu, X } from "lucide-react";
+import { getCurrentUser } from "../../services/api";
 
 interface PublicHeaderProps {
   onNavigate: (page: "home" | "login" | "register" | "dashboard" | "features" | "how-it-works" | "reviews") => void;
@@ -27,6 +28,26 @@ export default function PublicHeader({
   onLogout,
   activePage,
 }: PublicHeaderProps) {
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      getCurrentUser()
+        .then(setCurrentUser)
+        .catch((err) => console.log("PublicHeader current user fetch error", err));
+    }
+  }, [isLoggedIn]);
+
+  const normalizeRole = (role: string): string => {
+    const r = role.toLowerCase();
+    if (r === "admin") return "System Administrator";
+    if (r === "researcher") return "Researcher";
+    if (r === "user") return "Lecturer/Student";
+    if (r === "system administrator") return "System Administrator";
+    if (r === "lecturer/student") return "Lecturer/Student";
+    return role;
+  };
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -222,7 +243,7 @@ export default function PublicHeader({
                       boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
                     }}
                   >
-                    {currentRole ? currentRole.charAt(0) : "U"}
+                    {currentUser?.fullName ? currentUser.fullName.charAt(0).toUpperCase() : (currentRole ? currentRole.charAt(0).toUpperCase() : "U")}
                   </Avatar>
                   <Box sx={{ textAlign: "left" }}>
                     <Typography
@@ -233,7 +254,7 @@ export default function PublicHeader({
                         lineHeight: 1.1,
                       }}
                     >
-                      Dr. User
+                      {currentUser?.fullName || "Dr. User"}
                     </Typography>
                     <Typography
                       sx={{
@@ -242,7 +263,7 @@ export default function PublicHeader({
                         fontWeight: 600,
                       }}
                     >
-                      {currentRole}
+                      {normalizeRole(currentUser?.role || currentRole)}
                     </Typography>
                   </Box>
                 </Stack>
@@ -377,7 +398,7 @@ export default function PublicHeader({
                             "linear-gradient(135deg, #4f46e5, #06b6d4)",
                         }}
                       >
-                        {currentRole ? currentRole.charAt(0) : "U"}
+                        {currentUser?.fullName ? currentUser.fullName.charAt(0).toUpperCase() : (currentRole ? currentRole.charAt(0).toUpperCase() : "U")}
                       </Avatar>
                       <Box>
                         <Typography
@@ -387,12 +408,12 @@ export default function PublicHeader({
                             color: "#0f172a",
                           }}
                         >
-                          Dr. User
+                          {currentUser?.fullName || "Dr. User"}
                         </Typography>
                         <Typography
                           sx={{ fontSize: "0.7rem", color: "#64748b" }}
                         >
-                          {currentRole}
+                          {normalizeRole(currentUser?.role || currentRole)}
                         </Typography>
                       </Box>
                     </Stack>

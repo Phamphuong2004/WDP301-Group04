@@ -72,11 +72,11 @@ export async function register(payload: RegisterPayload): Promise<AuthResponse> 
 }
 
 /** GET /api/auth/me */
-export async function getCurrentUser(): Promise<AuthResponse["user"]> {
+export async function getCurrentUser(): Promise<User> {
   const res = await fetch(`${API_BASE_URL}/auth/me`, {
     headers: authHeaders(),
   });
-  return handleResponse<AuthResponse["user"]>(res);
+  return handleResponse<User>(res);
 }
 
 // ══════════════════════════════════════
@@ -373,6 +373,9 @@ export interface User {
   role: string;
   status?: string;
   createdAt?: string;
+  institution?: string;
+  bio?: string;
+  interests?: string[];
 }
 
 export interface AdminStats {

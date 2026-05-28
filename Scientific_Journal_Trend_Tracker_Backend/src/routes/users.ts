@@ -1,4 +1,4 @@
-﻿import { Router, Request, Response } from "express";
+import { Router, Request, Response } from "express";
 import {
   authMiddleware,
   roleMiddleware,
@@ -36,6 +36,21 @@ router.get(
         users,
         pagination: { page, limit, total, pages },
       });
+    } catch (error: any) {
+      res.status(error.status || 500).json({ message: error.message });
+    }
+  },
+);
+
+// Get admin dashboard stats (admin only)
+router.get(
+  "/admin/stats",
+  authMiddleware,
+  roleMiddleware(["admin"]),
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const stats = await UserService.getAdminStats();
+      res.json(stats);
     } catch (error: any) {
       res.status(error.status || 500).json({ message: error.message });
     }

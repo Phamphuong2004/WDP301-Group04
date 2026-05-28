@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Paper,
@@ -8,75 +8,17 @@ import {
   Tabs,
   Tab,
   Button,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
-import { Bell, BookOpen, TrendingUp, Info, Check, Trash2 } from "lucide-react";
-
-const data = [
-  {
-    id: 1,
-    type: "papers",
-    title: "New LLM paper",
-    message: "A new paper matches your interest.",
-    time: "2h ago",
-    read: false,
-  },
-  {
-    id: 2,
-    type: "trends",
-    title: "Topic momentum up",
-    message: "Generative AI increased by 16%.",
-    time: "4h ago",
-    read: false,
-  },
-  {
-    id: 3,
-    type: "system",
-    title: "Sync completed",
-    message: "Crossref sync finished successfully.",
-    time: "8h ago",
-    read: true,
-  },
-  {
-    id: 4,
-    type: "papers",
-    title: "Author update",
-    message: "A followed author published new work.",
-    time: "1d ago",
-    read: true,
-  },
-  {
-    id: 5,
-    type: "trends",
-    title: "Emerging keyword",
-    message: "Tool-augmented reasoning is rising.",
-    time: "1d ago",
-    read: false,
-  },
-  {
-    id: 6,
-    type: "system",
-    title: "Security notice",
-    message: "Password policy updated.",
-    time: "2d ago",
-    read: true,
-  },
-  {
-    id: 7,
-    type: "papers",
-    title: "Journal release",
-    message: "Nature MI published latest issue.",
-    time: "2d ago",
-    read: false,
-  },
-  {
-    id: 8,
-    type: "trends",
-    title: "Field alert",
-    message: "Biology AI submissions surged.",
-    time: "3d ago",
-    read: true,
-  },
-];
+import { Check, Trash2 } from "lucide-react";
+import {
+  getNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+  deleteNotification as deleteNotifAPI,
+  type Notification,
+} from "../../services/api";
 
 interface NotificationsProps {
   onMarkAllRead?: () => void;
@@ -84,18 +26,61 @@ interface NotificationsProps {
 
 export default function Notifications({ onMarkAllRead }: NotificationsProps) {
   const [tab, setTab] = useState("all");
-  const [items, setItems] = useState(data);
+  const [items, setItems] = useState<Notification[]>([]);
   const [visible, setVisible] = useState(4);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const res = await getNotifications(1, 50);
+        setItems(res.notifications);
+      } catch (err: any) {
+        setError(err.message || "Failed to load notifications");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const filtered = useMemo(
     () => items.filter((n) => tab === "all" || n.type === tab),
-    [items, tab],
+    [items, tab]
   );
   const shown = filtered.slice(0, visible);
 
-  const markAll = () => {
-    setItems((prev) => prev.map((n) => ({ ...n, read: true })));
-    onMarkAllRead?.();
+  const markAll = async () => {
+    try {
+      await markAllNotificationsRead();
+      setItems((prev) => prev.map((n) => ({ ...n, read: true })));
+      onMarkAllRead?.();
+    } catch {
+      // silently ignore
+    }
+  };
+
+  const markOne = async (id: string) => {
+    try {
+      await markNotificationRead(id);
+      setItems((prev) =>
+        prev.map((n) => (n._id === id ? { ...n, read: true } : n))
+      );
+    } catch {
+      // silently ignore
+    }
+  };
+
+  const removeOne = async (id: string) => {
+    try {
+      await deleteNotifAPI(id);
+      setItems((prev) => prev.filter((n) => n._id !== id));
+    } catch {
+      // silently ignore
+    }
   };
 
   const getTypeColor = (type: string) => {
@@ -164,104 +149,116 @@ export default function Notifications({ onMarkAllRead }: NotificationsProps) {
           Mark all as read
         </Button>
       </Paper>
-      <Paper
-        sx={{
-          borderRadius: 3,
-          overflow: "hidden",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-        }}
-      >
-        {shown.map((n, idx) => {
-          const typeColor = getTypeColor(n.type);
-          return (
-            <Box
-              key={n.id}
-              sx={{
-                p: 2.5,
-                background: n.read
-                  ? "transparent"
-                  : `linear-gradient(135deg, ${typeColor.bg}, rgba(255,255,255,0.5))`,
-                border: n.read
-                  ? "1px solid rgba(0,0,0,0.06)"
-                  : `1px solid ${typeColor.border}`,
-                borderBottom:
-                  idx < shown.length - 1
-                    ? "1px solid rgba(0,0,0,0.08)"
-                    : "none",
-                transition: "all 0.2s ease",
-                "&:hover": {
-                  bgcolor: !n.read ? typeColor.bg : "rgba(0,0,0,0.02)",
-                },
-              }}
-            >
-              <Box sx={{ display: "flex", gap: 1, alignItems: "start" }}>
-                <Typography sx={{ fontSize: "1.2rem" }}>
-                  {typeColor.icon}
-                </Typography>
-                <Box sx={{ flex: 1 }}>
-                  <Typography
-                    sx={{
-                      fontWeight: n.read ? 500 : 700,
-                      color: typeColor.text,
-                      fontSize: "0.95rem",
-                    }}
-                  >
-                    {n.title}
-                  </Typography>
-                  <Typography
-                    sx={{ color: "#64748b", fontSize: "0.85rem", mt: 0.3 }}
-                  >
-                    {n.message}
-                  </Typography>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      mt: 1,
-                    }}
-                  >
-                    <Typography sx={{ fontSize: "0.75rem", color: "#94a3b8" }}>
-                      {n.time}
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
+          {error}
+        </Alert>
+      )}
+
+      {loading ? (
+        <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
+          <CircularProgress sx={{ color: "#4f46e5" }} />
+        </Box>
+      ) : (
+        <Paper
+          sx={{
+            borderRadius: 3,
+            overflow: "hidden",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+          }}
+        >
+          {shown.length === 0 ? (
+            <Box sx={{ p: 4, textAlign: "center", color: "#94a3b8" }}>
+              <Typography>Không có thông báo nào</Typography>
+            </Box>
+          ) : (
+            shown.map((n, idx) => {
+              const typeColor = getTypeColor(n.type);
+              return (
+                <Box
+                  key={n._id}
+                  sx={{
+                    p: 2.5,
+                    background: n.read
+                      ? "transparent"
+                      : `linear-gradient(135deg, ${typeColor.bg}, rgba(255,255,255,0.5))`,
+                    border: n.read
+                      ? "1px solid rgba(0,0,0,0.06)"
+                      : `1px solid ${typeColor.border}`,
+                    borderBottom:
+                      idx < shown.length - 1
+                        ? "1px solid rgba(0,0,0,0.08)"
+                        : "none",
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                      bgcolor: !n.read ? typeColor.bg : "rgba(0,0,0,0.02)",
+                    },
+                  }}
+                >
+                  <Box sx={{ display: "flex", gap: 1, alignItems: "start" }}>
+                    <Typography sx={{ fontSize: "1.2rem" }}>
+                      {typeColor.icon}
                     </Typography>
-                    <Box>
-                      {!n.read && (
-                        <IconButton
-                          size="small"
-                          onClick={() =>
-                            setItems(
-                              items.map((x) =>
-                                x.id === n.id ? { ...x, read: true } : x,
-                              ),
-                            )
-                          }
-                          sx={{
-                            color: typeColor.text,
-                            "&:hover": { bgcolor: typeColor.bg },
-                          }}
-                        >
-                          <Check size={14} />
-                        </IconButton>
-                      )}
-                      <IconButton
-                        size="small"
-                        onClick={() =>
-                          setItems(items.filter((x) => x.id !== n.id))
-                        }
+                    <Box sx={{ flex: 1 }}>
+                      <Typography
                         sx={{
-                          color: "#ef4444",
-                          "&:hover": { bgcolor: "rgba(239,68,68,0.1)" },
+                          fontWeight: n.read ? 500 : 700,
+                          color: typeColor.text,
+                          fontSize: "0.95rem",
                         }}
                       >
-                        <Trash2 size={14} />
-                      </IconButton>
+                        {n.title}
+                      </Typography>
+                      <Typography
+                        sx={{ color: "#64748b", fontSize: "0.85rem", mt: 0.3 }}
+                      >
+                        {n.message}
+                      </Typography>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          mt: 1,
+                        }}
+                      >
+                        <Typography sx={{ fontSize: "0.75rem", color: "#94a3b8" }}>
+                          {new Date(n.createdAt).toLocaleString("vi-VN")}
+                        </Typography>
+                        <Box>
+                          {!n.read && (
+                            <IconButton
+                              size="small"
+                              onClick={() => markOne(n._id)}
+                              sx={{
+                                color: typeColor.text,
+                                "&:hover": { bgcolor: typeColor.bg },
+                              }}
+                            >
+                              <Check size={14} />
+                            </IconButton>
+                          )}
+                          <IconButton
+                            size="small"
+                            onClick={() => removeOne(n._id)}
+                            sx={{
+                              color: "#ef4444",
+                              "&:hover": { bgcolor: "rgba(239,68,68,0.1)" },
+                            }}
+                          >
+                            <Trash2 size={14} />
+                          </IconButton>
+                        </Box>
+                      </Box>
                     </Box>
                   </Box>
                 </Box>
-              </Box>
-            </Box>
-          );
-        })}
-      </Paper>
+              );
+            })
+          )}
+        </Paper>
+      )}
+
       {visible < filtered.length && (
         <Box sx={{ textAlign: "center", mt: 2 }}>
           <Button

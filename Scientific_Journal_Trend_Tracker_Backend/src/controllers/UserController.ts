@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+﻿import { Request, Response } from "express";
 import { validationResult } from "express-validator";
 import bcrypt from "bcryptjs";
 import User from "../models/User";
@@ -149,3 +149,5 @@ export class UserController {
     }
   }
 }
+
+

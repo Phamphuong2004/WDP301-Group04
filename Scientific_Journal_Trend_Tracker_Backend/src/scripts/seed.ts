@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+﻿import mongoose from "mongoose";
 import dotenv from "dotenv";
 import User from "../models/User";
 import Journal from "../models/Journal";
@@ -30,29 +30,40 @@ const seedData = async () => {
     await Keyword.deleteMany({});
     await Paper.deleteMany({});
 
-    console.log("Creating Admin User...");
+    console.log("Creating System Administrator...");
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash("admin123", salt);
     
     const admin = await User.create({
       email: "admin@example.com",
       password: hashedPassword,
-      fullName: "System Admin",
+      fullName: "admin",
       role: "admin",
       isActive: true,
       emailVerified: true,
       interests: ["Data Science", "Machine Learning"]
     });
 
-    console.log("Creating Regular User...");
-    const user = await User.create({
-      email: "user@example.com",
+    console.log("Creating Researcher...");
+    const researcher = await User.create({
+      email: "researcher@example.com",
       password: hashedPassword,
-      fullName: "Test User",
-      role: "user",
+      fullName: "Test Researcher",
+      role: "researcher",
       isActive: true,
       emailVerified: true,
       interests: ["Artificial Intelligence", "Blockchain"]
+    });
+
+    console.log("Creating Lecturer/Student...");
+    const student = await User.create({
+      email: "student@example.com",
+      password: hashedPassword,
+      fullName: "Test Student",
+      role: "user",
+      isActive: true,
+      emailVerified: true,
+      interests: ["Computer Vision", "Deep Learning"]
     });
 
     console.log("Creating Journals...");
@@ -156,3 +167,5 @@ const seedData = async () => {
 };
 
 seedData();
+
+

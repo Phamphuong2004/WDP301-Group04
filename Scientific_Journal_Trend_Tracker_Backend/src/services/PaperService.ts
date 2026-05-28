@@ -1,4 +1,4 @@
-import Paper from "../models/Paper";
+import { Paper, Author, Journal, Keyword, Topic } from "../models";
 import { getPaginationParams } from "../utils/analytics";
 
 export class PaperService {

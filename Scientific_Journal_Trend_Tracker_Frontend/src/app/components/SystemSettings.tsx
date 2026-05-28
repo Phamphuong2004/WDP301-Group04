@@ -20,31 +20,8 @@ import {
 } from "@mui/material";
 import { Database, Globe } from "lucide-react";
 
-const apiSources = [
-  { id: "ss", name: "Semantic Scholar", enabled: true },
-  { id: "oa", name: "OpenAlex", enabled: true },
-  { id: "cr", name: "Crossref", enabled: true },
-];
-const logs = [
-  {
-    time: "2026-05-15 10:00",
-    source: "OpenAlex",
-    papers: 1240,
-    status: "Success",
-  },
-  {
-    time: "2026-05-15 09:00",
-    source: "Crossref",
-    papers: 820,
-    status: "Success",
-  },
-  {
-    time: "2026-05-14 23:00",
-    source: "Semantic Scholar",
-    papers: 1120,
-    status: "Success",
-  },
-];
+const apiSources: any[] = [];
+const logs: any[] = [];
 
 export default function SystemSettings() {
   const [sources, setSources] = useState(apiSources);

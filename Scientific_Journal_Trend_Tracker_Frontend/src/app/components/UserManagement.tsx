@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Paper,
@@ -23,32 +23,11 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
 import { UserPlus, Edit3, ArrowLeft } from "lucide-react";
-
-const seed = [
-  {
-    id: 1,
-    name: "Dr. Alice Chen",
-    email: "alice.chen@mit.edu",
-    role: "Researcher",
-    status: "Active",
-  },
-  {
-    id: 2,
-    name: "Bob Martinez",
-    email: "bob@stanford.edu",
-    role: "Lecturer/Student",
-    status: "Suspended",
-  },
-  {
-    id: 3,
-    name: "Admin Jane",
-    email: "jane@system.io",
-    role: "Admin",
-    status: "Active",
-  },
-];
+import { getUsers, type User } from "../../services/api";
 
 interface UserManagementProps {
   currentRole?: string;
@@ -59,19 +38,37 @@ interface UserManagementProps {
 
 export default function UserManagement(props: UserManagementProps) {
   const { currentRole = "Admin", onNavigate } = props;
-  const [users, setUsers] = useState(seed);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [q, setQ] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [editUser, setEditUser] = useState<any>(null);
 
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const res = await getUsers(1, 100);
+        setUsers(res.users);
+      } catch (err: any) {
+        setError(err.message || "Failed to load users");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
   const filtered = useMemo(
     () =>
       users.filter(
         (u) =>
           (roleFilter === "all" || u.role === roleFilter) &&
-          `${u.name} ${u.email}`.toLowerCase().includes(q.toLowerCase()),
+          `${u.fullName} ${u.email}`.toLowerCase().includes(q.toLowerCase()),
       ),
     [users, roleFilter, q],
   );
@@ -89,13 +86,13 @@ export default function UserManagement(props: UserManagementProps) {
     { label: "Total Users", value: users.length },
     {
       label: "Researchers",
-      value: users.filter((u) => u.role === "Researcher").length,
+      value: users.filter((u) => u.role === "researcher").length,
     },
     {
       label: "Lecturers/Students",
-      value: users.filter((u) => u.role === "Lecturer/Student").length,
+      value: users.filter((u) => u.role === "user").length,
     },
-    { label: "Admins", value: users.filter((u) => u.role === "Admin").length },
+    { label: "System Administrators", value: users.filter((u) => u.role === "admin").length },
   ];
 
   // ── Different screens based on role ──
@@ -208,9 +205,9 @@ export default function UserManagement(props: UserManagementProps) {
             onChange={(e) => setRoleFilter(e.target.value)}
           >
             <MenuItem value="all">All</MenuItem>
-            <MenuItem value="Researcher">Researcher</MenuItem>
-            <MenuItem value="Lecturer/Student">Lecturer/Student</MenuItem>
-            <MenuItem value="Admin">Admin</MenuItem>
+            <MenuItem value="researcher">Researcher</MenuItem>
+            <MenuItem value="user">Lecturer/Student</MenuItem>
+            <MenuItem value="admin">System Administrator</MenuItem>
           </Select>
         </FormControl>
         <Button
@@ -255,7 +252,7 @@ export default function UserManagement(props: UserManagementProps) {
             <TableBody>
               {shown.map((u) => (
                 <TableRow
-                  key={u.id}
+                  key={u._id}
                   sx={{
                     "&:hover": { bgcolor: "rgba(102,126,234,0.05)" },
                     borderBottom: "1px solid rgba(0,0,0,0.06)",
@@ -266,11 +263,11 @@ export default function UserManagement(props: UserManagementProps) {
                       sx={{ display: "flex", alignItems: "center", gap: 1.5 }}
                     >
                       <Avatar sx={{ bgcolor: "#4f46e5" }}>
-                        {u.name.charAt(0)}
+                        {(u.fullName ?? u.email).charAt(0)}
                       </Avatar>
                       <Box>
                         <Typography sx={{ fontWeight: 700 }}>
-                          {u.name}
+                          {u.fullName}
                         </Typography>
                         <Typography
                           sx={{ color: "#94a3b8", fontSize: "0.78rem" }}

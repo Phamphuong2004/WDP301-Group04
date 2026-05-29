@@ -1,39 +1,49 @@
-### Node
+# Dependencies
 node_modules/
-.pnpm-debug.log*
-npm-debug.log*
-yarn-debug.log*
-pnpm-debug.log*
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
 
-### Build output
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Build outputs
 dist/
 build/
 .vite/
-/.parcel-cache
 
-### Environment
-.env
-.env.*.local
-env.local
-
-### Logs
-logs/
-*.log
-
-### OS
-.DS_Store
-Thumbs.db
-
-### IDEs
+# IDE & Editor
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.iml
 
-### TypeScript
-*.tsbuildinfo
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-### Coverage
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Testing
 coverage/
+.nyc_output/
 
-### Caches
+# Misc
 .cache/
-/.turbo/
+.turbo/
+dist-ssr/

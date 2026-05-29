@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box, Typography, InputBase, IconButton, Avatar, Badge,
   Menu, MenuItem, Divider, ListItemIcon, Chip, Tooltip,
@@ -8,6 +8,7 @@ import {
   Settings, KeyboardArrowDown,
 } from '@mui/icons-material';
 import { HEADER_HEIGHT, SIDEBAR_WIDTH } from '../App';
+import { getCurrentUser } from '../../services/api';
 
 const pageTitles: Record<string, { title: string; subtitle: string }> = {
   dashboard: { title: 'Research Hub', subtitle: 'Global research monitoring & trends' },
@@ -34,6 +35,24 @@ interface HeaderProps {
 }
 
 export default function Header({ activeSection, onSectionChange, onNavigate, currentRole, unreadCount }: HeaderProps) {
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    getCurrentUser()
+      .then(setCurrentUser)
+      .catch((err) => console.log("Header current user fetch error", err));
+  }, []);
+
+  const normalizeRole = (role: string): string => {
+    const r = role.toLowerCase();
+    if (r === "admin") return "System Administrator";
+    if (r === "researcher") return "Researcher";
+    if (r === "user") return "Lecturer/Student";
+    if (r === "system administrator") return "System Administrator";
+    if (r === "lecturer/student") return "Lecturer/Student";
+    return role;
+  };
+
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const page = pageTitles[activeSection] || pageTitles.dashboard;
 
@@ -150,20 +169,20 @@ export default function Header({ activeSection, onSectionChange, onNavigate, cur
             sx={{
               width: 32,
               height: 32,
-              background: `linear-gradient(135deg, ${getRoleColor(currentRole)}, #312e81)`,
+              background: `linear-gradient(135deg, ${getRoleColor(currentUser?.role || currentRole)}, #312e81)`,
               fontSize: '0.85rem',
               fontWeight: 800,
               boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
             }}
           >
-            {currentRole.charAt(0)}
+            {(currentUser?.fullName || "Dr. User").charAt(0).toUpperCase()}
           </Avatar>
           <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
             <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: '#0f172a', lineHeight: 1 }}>
-              Dr. User
+              {currentUser?.fullName || "Dr. User"}
             </Typography>
             <Typography sx={{ fontSize: '0.68rem', color: '#94a3b8', fontWeight: 600 }}>
-              {currentRole}
+              {normalizeRole(currentUser?.role || currentRole)}
             </Typography>
           </Box>
           <KeyboardArrowDown sx={{ fontSize: 16, color: '#94a3b8' }} />
@@ -182,18 +201,18 @@ export default function Header({ activeSection, onSectionChange, onNavigate, cur
       >
         <Box sx={{ px: 2, py: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
-             <Avatar sx={{ width: 44, height: 44, bgcolor: getRoleColor(currentRole) }}>{currentRole.charAt(0)}</Avatar>
+             <Avatar sx={{ width: 44, height: 44, bgcolor: getRoleColor(currentUser?.role || currentRole) }}>{(currentUser?.fullName || "Dr. User").charAt(0).toUpperCase()}</Avatar>
              <Box>
-               <Typography sx={{ fontWeight: 800, fontSize: '0.95rem' }}>Dr. User</Typography>
-               <Typography sx={{ color: '#64748b', fontSize: '0.75rem' }}>user@university.edu</Typography>
+                <Typography sx={{ fontWeight: 800, fontSize: '0.95rem' }}>{currentUser?.fullName || "Dr. User"}</Typography>
+                <Typography sx={{ color: '#64748b', fontSize: '0.75rem' }}>{currentUser?.email || "user@university.edu"}</Typography>
              </Box>
           </Box>
           <Chip
-            label={currentRole}
+            label={normalizeRole(currentUser?.role || currentRole)}
             size="small"
             sx={{
-              bgcolor: `${getRoleColor(currentRole)}15`,
-              color: getRoleColor(currentRole),
+              bgcolor: `${getRoleColor(currentUser?.role || currentRole)}15`,
+              color: getRoleColor(currentUser?.role || currentRole),
               height: 22,
               fontSize: '0.65rem',
               fontWeight: 800,

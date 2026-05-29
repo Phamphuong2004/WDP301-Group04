@@ -1,5 +1,8 @@
 import { Paper, Author, Journal, Keyword, Topic } from "../models";
-import { getPaginationParams } from "../utils/analytics";
+
+type PaperSearchSortField = "publicationYear" | "citationCount";
+
+type PaperSearchSortDirection = 1 | -1;
 
 export class PaperService {
   static async getAllPapers(page: number, limit: number) {
@@ -63,13 +66,39 @@ export class PaperService {
     return paper;
   }
 
-  static async searchPapers(query: string, year?: number, journalId?: string) {
-    const searchQuery: any = {
-      $or: [
-        { title: { $regex: query, $options: "i" } },
-        { abstract: { $regex: query, $options: "i" } },
-      ],
-    };
+  static async searchPapers(
+    query: string,
+    year?: number,
+    journalId?: string,
+    page: number = 1,
+    limit: number = 10,
+    sortField: PaperSearchSortField = "publicationYear",
+    sortDirection: PaperSearchSortDirection = -1,
+  ) {
+    const skip = (page - 1) * limit;
+    const searchCriteria: any[] = [
+      { title: { $regex: query, $options: "i" } },
+      { abstract: { $regex: query, $options: "i" } },
+    ];
+
+    const [matchedAuthors, matchedJournals] = await Promise.all([
+      Author.find({ fullName: { $regex: query, $options: "i" } }).select("_id"),
+      Journal.find({ name: { $regex: query, $options: "i" } }).select("_id"),
+    ]);
+
+    if (matchedAuthors.length > 0) {
+      searchCriteria.push({
+        authors: { $in: matchedAuthors.map((author) => author._id) },
+      });
+    }
+
+    if (matchedJournals.length > 0) {
+      searchCriteria.push({
+        journalId: { $in: matchedJournals.map((journal) => journal._id) },
+      });
+    }
+
+    const searchQuery: any = { $or: searchCriteria };
 
     if (year) {
       searchQuery.publicationYear = year;
@@ -79,11 +108,24 @@ export class PaperService {
       searchQuery.journalId = journalId;
     }
 
-    const papers = await Paper.find(searchQuery)
-      .populate(["authors", "journalId", "keywords"])
-      .sort({ publicationYear: -1 });
+    const sort: Record<string, PaperSearchSortDirection> = {
+      [sortField]: sortDirection,
+    };
 
-    return papers;
+    const [papers, total] = await Promise.all([
+      Paper.find(searchQuery)
+        .populate(["authors", "journalId", "keywords"])
+        .sort(sort)
+        .skip(skip)
+        .limit(limit),
+      Paper.countDocuments(searchQuery),
+    ]);
+
+    return {
+      papers,
+      total,
+      pages: Math.ceil(total / limit),
+    };
   }
 
   static async getPapersByCitation(minCitations: number) {

@@ -6,7 +6,8 @@
  * Khi cần thay đổi base URL (ví dụ deploy production), chỉ cần sửa API_BASE_URL.
  */
 
-export const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:5000/api";
+export const API_BASE_URL =
+  (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:5000/api";
 
 // ─── Helper: lấy token từ localStorage ───
 const getToken = (): string | null => localStorage.getItem("token");
@@ -62,7 +63,9 @@ export async function login(payload: LoginPayload): Promise<AuthResponse> {
 }
 
 /** POST /api/auth/register */
-export async function register(payload: RegisterPayload): Promise<AuthResponse> {
+export async function register(
+  payload: RegisterPayload,
+): Promise<AuthResponse> {
   const res = await fetch(`${API_BASE_URL}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -87,11 +90,13 @@ export interface Paper {
   _id: string;
   title: string;
   abstract: string;
-  authors: string[];
+  authors: Array<string | { _id?: string; fullName?: string; name?: string }>;
   publicationYear: number;
   doi: string;
   journal?: { _id: string; name: string };
-  keywords?: { _id: string; name: string }[];
+  journalId?: { _id: string; name: string };
+  keywords?: Array<string | { _id?: string; name?: string }>;
+  citationCount?: number;
   citations?: number;
 }
 
@@ -101,22 +106,40 @@ export interface PaginatedResponse<T> {
 }
 
 /** GET /api/papers?page=&limit= */
-export async function getPapers(page = 1, limit = 10): Promise<{ papers: Paper[]; pagination: any }> {
+export async function getPapers(
+  page = 1,
+  limit = 10,
+): Promise<{ papers: Paper[]; pagination: any }> {
   const res = await fetch(`${API_BASE_URL}/papers?page=${page}&limit=${limit}`);
   return handleResponse(res);
 }
 
-/** GET /api/papers/search/query?q=&year=&journalId= */
+export interface PaperSearchParams {
+  year?: number;
+  journalId?: string;
+  page?: number;
+  limit?: number;
+  sort?: string;
+}
+
+export interface PaperSearchResponse {
+  papers: Paper[];
+  pagination: { page: number; limit: number; total: number; pages: number };
+}
+
+/** GET /api/papers/search/query?q=&year=&journalId=&page=&limit=&sort= */
 export async function searchPapers(
   q: string,
-  year?: number,
-  journalId?: string
-): Promise<Paper[]> {
+  options: PaperSearchParams = {},
+): Promise<PaperSearchResponse> {
   const params = new URLSearchParams({ q });
-  if (year) params.append("year", String(year));
-  if (journalId) params.append("journalId", journalId);
+  if (options.year) params.append("year", String(options.year));
+  if (options.journalId) params.append("journalId", options.journalId);
+  if (options.page) params.append("page", String(options.page));
+  if (options.limit) params.append("limit", String(options.limit));
+  if (options.sort) params.append("sort", options.sort);
   const res = await fetch(`${API_BASE_URL}/papers/search/query?${params}`);
-  return handleResponse<Paper[]>(res);
+  return handleResponse<PaperSearchResponse>(res);
 }
 
 /** GET /api/papers/:id */
@@ -138,13 +161,20 @@ export interface Keyword {
 
 /** GET /api/keywords/trends/trending?limit= */
 export async function getTrendingKeywords(limit = 20): Promise<Keyword[]> {
-  const res = await fetch(`${API_BASE_URL}/keywords/trends/trending?limit=${limit}`);
+  const res = await fetch(
+    `${API_BASE_URL}/keywords/trends/trending?limit=${limit}`,
+  );
   return handleResponse<Keyword[]>(res);
 }
 
 /** GET /api/keywords?page=&limit= */
-export async function getKeywords(page = 1, limit = 20): Promise<{ keywords: Keyword[]; pagination: any }> {
-  const res = await fetch(`${API_BASE_URL}/keywords?page=${page}&limit=${limit}`);
+export async function getKeywords(
+  page = 1,
+  limit = 20,
+): Promise<{ keywords: Keyword[]; pagination: any }> {
+  const res = await fetch(
+    `${API_BASE_URL}/keywords?page=${page}&limit=${limit}`,
+  );
   return handleResponse(res);
 }
 
@@ -162,8 +192,13 @@ export interface Journal {
 }
 
 /** GET /api/journals?page=&limit= */
-export async function getJournals(page = 1, limit = 10): Promise<{ journals: Journal[]; pagination: any }> {
-  const res = await fetch(`${API_BASE_URL}/journals?page=${page}&limit=${limit}`);
+export async function getJournals(
+  page = 1,
+  limit = 10,
+): Promise<{ journals: Journal[]; pagination: any }> {
+  const res = await fetch(
+    `${API_BASE_URL}/journals?page=${page}&limit=${limit}`,
+  );
   return handleResponse(res);
 }
 
@@ -193,20 +228,33 @@ export async function getTrendingPublications(): Promise<PublicationTrend[]> {
 }
 
 /** GET /api/publication-trends?page=&limit= */
-export async function getPublicationTrends(page = 1, limit = 10): Promise<{ trends: PublicationTrend[]; pagination: any }> {
-  const res = await fetch(`${API_BASE_URL}/publication-trends?page=${page}&limit=${limit}`);
+export async function getPublicationTrends(
+  page = 1,
+  limit = 10,
+): Promise<{ trends: PublicationTrend[]; pagination: any }> {
+  const res = await fetch(
+    `${API_BASE_URL}/publication-trends?page=${page}&limit=${limit}`,
+  );
   return handleResponse(res);
 }
 
 /** GET /api/publication-trends/keyword/:keywordId */
-export async function getTrendsByKeyword(keywordId: string): Promise<PublicationTrend[]> {
-  const res = await fetch(`${API_BASE_URL}/publication-trends/keyword/${keywordId}`);
+export async function getTrendsByKeyword(
+  keywordId: string,
+): Promise<PublicationTrend[]> {
+  const res = await fetch(
+    `${API_BASE_URL}/publication-trends/keyword/${keywordId}`,
+  );
   return handleResponse<PublicationTrend[]>(res);
 }
 
 /** GET /api/publication-trends/journal/:journalId */
-export async function getTrendsByJournal(journalId: string): Promise<PublicationTrend[]> {
-  const res = await fetch(`${API_BASE_URL}/publication-trends/journal/${journalId}`);
+export async function getTrendsByJournal(
+  journalId: string,
+): Promise<PublicationTrend[]> {
+  const res = await fetch(
+    `${API_BASE_URL}/publication-trends/journal/${journalId}`,
+  );
   return handleResponse<PublicationTrend[]>(res);
 }
 
@@ -224,10 +272,16 @@ export interface Notification {
 }
 
 /** GET /api/notifications?page=&limit= */
-export async function getNotifications(page = 1, limit = 20): Promise<{ notifications: Notification[]; pagination: any }> {
-  const res = await fetch(`${API_BASE_URL}/notifications?page=${page}&limit=${limit}`, {
-    headers: authHeaders(),
-  });
+export async function getNotifications(
+  page = 1,
+  limit = 20,
+): Promise<{ notifications: Notification[]; pagination: any }> {
+  const res = await fetch(
+    `${API_BASE_URL}/notifications?page=${page}&limit=${limit}`,
+    {
+      headers: authHeaders(),
+    },
+  );
   return handleResponse(res);
 }
 
@@ -258,7 +312,9 @@ export async function markAllNotificationsRead(): Promise<{ message: string }> {
 }
 
 /** DELETE /api/notifications/:id */
-export async function deleteNotification(id: string): Promise<{ message: string }> {
+export async function deleteNotification(
+  id: string,
+): Promise<{ message: string }> {
   const res = await fetch(`${API_BASE_URL}/notifications/${id}`, {
     method: "DELETE",
     headers: authHeaders(),
@@ -286,15 +342,23 @@ export interface Bookmark {
 }
 
 /** GET /api/bookmarks?page=&limit= */
-export async function getBookmarks(page = 1, limit = 20): Promise<{ bookmarks: Bookmark[]; pagination: any }> {
-  const res = await fetch(`${API_BASE_URL}/bookmarks?page=${page}&limit=${limit}`, {
-    headers: authHeaders(),
-  });
+export async function getBookmarks(
+  page = 1,
+  limit = 20,
+): Promise<{ bookmarks: Bookmark[]; pagination: any }> {
+  const res = await fetch(
+    `${API_BASE_URL}/bookmarks?page=${page}&limit=${limit}`,
+    {
+      headers: authHeaders(),
+    },
+  );
   return handleResponse(res);
 }
 
 /** POST /api/bookmarks/:paperId */
-export async function addBookmark(paperId: string): Promise<{ message: string }> {
+export async function addBookmark(
+  paperId: string,
+): Promise<{ message: string }> {
   const res = await fetch(`${API_BASE_URL}/bookmarks/${paperId}`, {
     method: "POST",
     headers: authHeaders(),
@@ -303,7 +367,9 @@ export async function addBookmark(paperId: string): Promise<{ message: string }>
 }
 
 /** DELETE /api/bookmarks/:paperId */
-export async function removeBookmark(paperId: string): Promise<{ message: string }> {
+export async function removeBookmark(
+  paperId: string,
+): Promise<{ message: string }> {
   const res = await fetch(`${API_BASE_URL}/bookmarks/${paperId}`, {
     method: "DELETE",
     headers: authHeaders(),
@@ -312,7 +378,9 @@ export async function removeBookmark(paperId: string): Promise<{ message: string
 }
 
 /** GET /api/bookmarks/:paperId/check */
-export async function checkBookmark(paperId: string): Promise<{ isBookmarked: boolean }> {
+export async function checkBookmark(
+  paperId: string,
+): Promise<{ isBookmarked: boolean }> {
   const res = await fetch(`${API_BASE_URL}/bookmarks/${paperId}/check`, {
     headers: authHeaders(),
   });
@@ -343,7 +411,7 @@ export async function getFollows(): Promise<Follow[]> {
 export async function addFollow(
   targetType: "Keyword" | "Journal",
   targetId: string,
-  notifyEnabled = true
+  notifyEnabled = true,
 ): Promise<Follow> {
   const res = await fetch(`${API_BASE_URL}/follows`, {
     method: "POST",
@@ -354,7 +422,9 @@ export async function addFollow(
 }
 
 /** DELETE /api/follows/:targetId */
-export async function removeFollow(targetId: string): Promise<{ message: string }> {
+export async function removeFollow(
+  targetId: string,
+): Promise<{ message: string }> {
   const res = await fetch(`${API_BASE_URL}/follows/${targetId}`, {
     method: "DELETE",
     headers: authHeaders(),
@@ -401,7 +471,10 @@ export async function getAdminStats(): Promise<AdminStats> {
 }
 
 /** GET /api/users  (Admin only) */
-export async function getUsers(page = 1, limit = 10): Promise<{ users: User[]; pagination: any }> {
+export async function getUsers(
+  page = 1,
+  limit = 10,
+): Promise<{ users: User[]; pagination: any }> {
   const res = await fetch(`${API_BASE_URL}/users?page=${page}&limit=${limit}`, {
     headers: authHeaders(),
   });
@@ -409,7 +482,10 @@ export async function getUsers(page = 1, limit = 10): Promise<{ users: User[]; p
 }
 
 /** PUT /api/users/:id */
-export async function updateUser(id: string, data: Partial<User>): Promise<User> {
+export async function updateUser(
+  id: string,
+  data: Partial<User>,
+): Promise<User> {
   const res = await fetch(`${API_BASE_URL}/users/${id}`, {
     method: "PUT",
     headers: authHeaders(),
@@ -431,7 +507,7 @@ export async function deleteUser(id: string): Promise<{ message: string }> {
 export async function changePassword(
   id: string,
   currentPassword: string,
-  newPassword: string
+  newPassword: string,
 ): Promise<{ message: string }> {
   const res = await fetch(`${API_BASE_URL}/users/${id}/change-password`, {
     method: "POST",
@@ -459,7 +535,10 @@ export async function getEmergingTopics(): Promise<Topic[]> {
 }
 
 /** GET /api/topics?page=&limit= */
-export async function getTopics(page = 1, limit = 10): Promise<{ topics: Topic[]; pagination: any }> {
+export async function getTopics(
+  page = 1,
+  limit = 10,
+): Promise<{ topics: Topic[]; pagination: any }> {
   const res = await fetch(`${API_BASE_URL}/topics?page=${page}&limit=${limit}`);
   return handleResponse(res);
 }

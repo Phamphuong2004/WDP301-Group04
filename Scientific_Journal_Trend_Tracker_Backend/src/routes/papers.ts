@@ -111,15 +111,38 @@ router.get(
   "/search/query",
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { q, year, journalId } = req.query;
+      const { q, year, journalId, page, limit, sort } = req.query;
 
-      const papers = await PaperService.searchPapers(
+      if (!q || !String(q).trim()) {
+        res.status(400).json({ message: "Search query is required" });
+        return;
+      }
+
+      const sortValue = (sort as string) || "-publicationYear";
+      const sortField = sortValue.replace(/^-/, "");
+      const sortDirection = sortValue.startsWith("-") ? -1 : 1;
+      const normalizedSortField =
+        sortField === "citationCount" ? "citationCount" : "publicationYear";
+
+      const result = await PaperService.searchPapers(
         q as string,
         year ? parseInt(year as string) : undefined,
         journalId as string,
+        page ? parseInt(page as string) : 1,
+        limit ? parseInt(limit as string) : 10,
+        normalizedSortField,
+        sortDirection,
       );
 
-      res.json(papers);
+      res.json({
+        ...result,
+        pagination: {
+          page: page ? parseInt(page as string) : 1,
+          limit: limit ? parseInt(limit as string) : 10,
+          total: result.total,
+          pages: result.pages,
+        },
+      });
     } catch (error: any) {
       res.status(error.status || 500).json({ message: error.message });
     }
@@ -127,5 +150,3 @@ router.get(
 );
 
 export default router;
-
-

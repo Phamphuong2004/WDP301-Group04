@@ -542,3 +542,26 @@ export async function getTopics(
   const res = await fetch(`${API_BASE_URL}/topics?page=${page}&limit=${limit}`);
   return handleResponse(res);
 }
+
+// ══════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════
+
+export interface DashboardStats {
+  topKeywords: { _id: string; name: string; count: number }[];
+  topJournals: { _id: string; name: string; count: number }[];
+  timelineData: { year: number; paperCount: number }[];
+  generatedAt: string;
+}
+
+/** GET /api/dashboard/stats */
+export async function getDashboardStats(year?: number): Promise<DashboardStats> {
+  const url = new URL(`${API_BASE_URL}/dashboard/stats`);
+  if (year) {
+    url.searchParams.append("year", year.toString());
+  }
+  const res = await fetch(url.toString(), {
+    headers: authHeaders(),
+  });
+  return handleResponse<DashboardStats>(res);
+}

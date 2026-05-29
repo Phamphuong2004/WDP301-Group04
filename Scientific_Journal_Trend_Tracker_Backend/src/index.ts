@@ -6,6 +6,7 @@ import { connectDB } from "./config/database";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 import { requestLogger, errorLogger } from "./middleware/logger";
 import swaggerSpec from "./config/swagger";
+import { initCronJobs } from "./scripts/cron";
 
 // Import routes
 import authRoutes from "./routes/auth";
@@ -19,6 +20,8 @@ import bookmarksRoutes from "./routes/bookmarks";
 import notificationsRoutes from "./routes/notifications";
 import followsRoutes from "./routes/follows";
 import publicationTrendsRoutes from "./routes/publicationTrends";
+import dashboardRoutes from "./routes/dashboard";
+import adminRoutes from "./routes/admin";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -110,6 +113,8 @@ app.use("/api/bookmarks", bookmarksRoutes);
 app.use("/api/notifications", notificationsRoutes);
 app.use("/api/follows", followsRoutes);
 app.use("/api/publication-trends", publicationTrendsRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/admin", adminRoutes);
 
 // API Documentation
 app.get("/api", (req, res) => {
@@ -128,6 +133,8 @@ app.get("/api", (req, res) => {
       notifications: "/api/notifications",
       follows: "/api/follows",
       "publication-trends": "/api/publication-trends",
+      dashboard: "/api/dashboard",
+      admin: "/api/admin",
     },
   });
 });
@@ -143,6 +150,9 @@ app.use(errorHandler);
 app.listen(PORT, () => {
   console.log(`\n🚀 Server running on http://localhost:${PORT}`);
   console.log(`📚 API docs: http://localhost:${PORT}/api\n`);
+  
+  // Initialize Background Tasks
+  initCronJobs();
 });
 
 export default app;

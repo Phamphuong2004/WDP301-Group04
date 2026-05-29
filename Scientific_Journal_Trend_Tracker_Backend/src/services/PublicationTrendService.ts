@@ -1,4 +1,8 @@
+import mongoose from "mongoose";
 import PublicationTrend from "../models/PublicationTrend";
+import Keyword from "../models/Keyword";
+import Paper from "../models/Paper";
+import AnalysisRun from "../models/AnalysisRun";
 import { calculateGrowthRate } from "../utils/analytics";
 
 export class PublicationTrendService {
@@ -175,6 +179,134 @@ export class PublicationTrendService {
 
     return analysis;
   }
+
+  static async calculateAndUpsertTrends() {
+    console.log("[TrendService] Starting trend calculation...");
+    
+    // 1. Calculate paper counts per keyword x year using Aggregation
+    const trendsAggregation = await Paper.aggregate([
+      { $unwind: "$keywords" },
+      {
+        $group: {
+          _id: {
+            keywordId: "$keywords",
+            year: "$publicationYear"
+          },
+          paperCount: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { "_id.keywordId": 1, "_id.year": 1 }
+      }
+    ]);
+
+    // Group the results by keyword to calculate growth rates and prepare bulk operations
+    const keywordYearCounts: Record<string, { year: number; paperCount: number }[]> = {};
+    
+    for (const item of trendsAggregation) {
+      if (!item._id.keywordId || !item._id.year) continue;
+      const kwStr = item._id.keywordId.toString();
+      if (!keywordYearCounts[kwStr]) {
+        keywordYearCounts[kwStr] = [];
+      }
+      keywordYearCounts[kwStr].push({
+        year: item._id.year,
+        paperCount: item.paperCount
+      });
+    }
+
+    const trendBulkOps = [];
+    const runBulkOps = [];
+
+    // Map to keep track of analysisRunId per keyword
+    const analysisRunsMap: Record<string, mongoose.Types.ObjectId> = {};
+
+    for (const [kwStr, yearsData] of Object.entries(keywordYearCounts)) {
+      const keywordId = new mongoose.Types.ObjectId(kwStr);
+      const analysisRunId = new mongoose.Types.ObjectId();
+      analysisRunsMap[kwStr] = analysisRunId;
+
+      // 1.a Create an AnalysisRun for this keyword
+      runBulkOps.push({
+        insertOne: {
+          document: {
+            _id: analysisRunId,
+            keywordId: keywordId,
+            status: "completed",
+            source: "batch-calculation",
+          }
+        }
+      });
+
+      // Sort by year to calculate growth rate
+      yearsData.sort((a, b) => a.year - b.year);
+      
+      let previousCount = 0;
+      for (const data of yearsData) {
+        const growthRate = previousCount === 0 ? 0 : calculateGrowthRate(data.paperCount, previousCount);
+        const isTrending = growthRate > 0.2;
+
+        trendBulkOps.push({
+          updateOne: {
+            filter: { keywordId, year: data.year },
+            update: {
+              $set: {
+                keywordId,
+                year: data.year,
+                paperCount: data.paperCount,
+                previousCount,
+                growthRate,
+                isTrending,
+                analysisRunId,
+                calculatedAt: new Date()
+              }
+            },
+            upsert: true
+          }
+        });
+
+        previousCount = data.paperCount;
+      }
+    }
+
+    // Execute Bulk Ops for AnalysisRun and PublicationTrend
+    if (runBulkOps.length > 0) {
+      await AnalysisRun.bulkWrite(runBulkOps);
+    }
+    if (trendBulkOps.length > 0) {
+      await PublicationTrend.bulkWrite(trendBulkOps);
+    }
+
+    // 2. Denormalize paperCount into Keyword collection
+    console.log("[TrendService] Updating Keyword paperCounts...");
+    const keywordAggregation = await Paper.aggregate([
+      { $unwind: "$keywords" },
+      {
+        $group: {
+          _id: "$keywords",
+          totalCount: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const keywordBulkOps = [];
+    for (const item of keywordAggregation) {
+      if (!item._id) continue;
+      keywordBulkOps.push({
+        updateOne: {
+          filter: { _id: item._id },
+          update: { $set: { paperCount: item.totalCount } }
+        }
+      });
+    }
+
+    if (keywordBulkOps.length > 0) {
+      await Keyword.bulkWrite(keywordBulkOps);
+    }
+
+    console.log(`[TrendService] Calculation finished. Updated ${trendBulkOps.length} trends and ${keywordBulkOps.length} keywords.`);
+  }
+
   // Aliases used by routes
   static getAllPublicationTrends = PublicationTrendService.getAllTrends;
   static getPublicationTrendById = PublicationTrendService.getTrendById;

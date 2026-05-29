@@ -17,7 +17,10 @@ import {
   getCurrentUser,
   type Paper as ApiPaper,
   type Keyword,
+  getDashboardStats,
+  type DashboardStats
 } from "../../services/api";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 interface ResearcherDashboardProps {
   onNavigate?: (section: string) => void;
@@ -39,6 +42,7 @@ export default function ResearcherDashboard({
   const [selectedPaper, setSelectedPaper] = useState<PaperType | null>(null);
   const [recentPubs, setRecentPubs] = useState<ApiPaper[]>([]);
   const [trendingKeywords, setTrendingKeywords] = useState<Keyword[]>([]);
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,6 +61,14 @@ export default function ResearcherDashboard({
         // Fetch trending keywords
         const keywordsData = await getTrendingKeywords(10);
         setTrendingKeywords(keywordsData || []);
+
+        // Fetch Dashboard stats
+        try {
+          const stats = await getDashboardStats();
+          setDashboardStats(stats);
+        } catch (e) {
+          console.error("Could not load dashboard stats", e);
+        }
 
         // Fetch current user
         try {
@@ -243,13 +255,13 @@ export default function ResearcherDashboard({
                   onClick={() => setSelectedPaper({
                     id: pub._id as any,
                     title: pub.title,
-                    authors: pub.authors,
+                    authors: pub.authors.map(a => typeof a === 'string' ? a : (a.fullName || a.name || 'Unknown')),
                     journal: pub.journal?.name || "Unknown",
                     year: pub.publicationYear,
                     abstract: pub.abstract,
                     citations: pub.citations || 0,
                     doi: pub.doi,
-                    keywords: pub.keywords?.map(k => k.name) || []
+                    keywords: pub.keywords?.map(k => typeof k === 'string' ? k : (k.name || 'Unknown')) || []
                   })}
                   sx={{
                     p: 2,
@@ -358,6 +370,33 @@ export default function ResearcherDashboard({
               )}
             </Box>
           </Paper>
+          <Paper sx={{ borderRadius: 3, border: "1px solid rgba(0,0,0,0.1)", mt: 2 }}>
+            <Box
+              sx={{
+                p: 2.5,
+                borderBottom: "1px solid rgba(0,0,0,0.1)",
+              }}
+            >
+              <Typography sx={{ fontWeight: 700, fontSize: "1.1rem" }}>
+                📈 Publication Timeline
+              </Typography>
+            </Box>
+            <Box sx={{ p: 2.5, height: 300 }}>
+              {dashboardStats?.timelineData && dashboardStats.timelineData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={dashboardStats.timelineData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="year" />
+                    <YAxis />
+                    <Tooltip />
+                    <Line type="monotone" dataKey="paperCount" stroke="#8884d8" activeDot={{ r: 8 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <Typography color="text.secondary">No timeline data available.</Typography>
+              )}
+            </Box>
+          </Paper>
         </Grid>
       </Grid>
 
@@ -429,18 +468,22 @@ export default function ResearcherDashboard({
               </Typography>
             </Box>
             <Box sx={{ p: 2.5, display: "flex", flexWrap: "wrap", gap: 1 }}>
-              {([] as string[]).map((area, idx) => (
-                <Chip
-                  key={idx}
-                  label={area}
-                  sx={{
-                    bgcolor: "rgba(102,126,234,0.1)",
-                    color: "#4f46e5",
-                    fontWeight: 500,
-                    borderRadius: 2,
-                  }}
-                />
-              ))}
+              {dashboardStats?.topKeywords ? (
+                dashboardStats.topKeywords.map((kw, idx) => (
+                  <Chip
+                    key={idx}
+                    label={`${kw.name} (${kw.count})`}
+                    sx={{
+                      bgcolor: "rgba(102,126,234,0.1)",
+                      color: "#4f46e5",
+                      fontWeight: 500,
+                      borderRadius: 2,
+                    }}
+                  />
+                ))
+              ) : (
+                <Typography color="text.secondary">No keyword data.</Typography>
+              )}
             </Box>
           </Paper>
         </Grid>

@@ -1,29 +1,77 @@
+import { useEffect, useState } from "react";
 import {
   Box,
   Grid,
   Typography,
   Paper,
-  Card,
-  CardContent,
   IconButton,
+  CircularProgress,
+  Alert,
+  Avatar,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+  Divider,
+  Chip,
+  Button,
 } from "@mui/material";
 import {
   Users,
-  Activity,
-  AlertCircle,
-  TrendingUp,
   ArrowLeft,
+  BookOpen,
+  FileText,
+  RefreshCw,
+  TrendingUp,
 } from "lucide-react";
+import {
+  getAdminStats,
+  getUsers,
+  getTrendingKeywords,
+  type AdminStats,
+  type User,
+  type Keyword,
+} from "../../services/api";
 
 interface AdminDashboardProps {
   onNavigate?: (section: string) => void;
 }
 
 export default function AdminDashboard({ onNavigate }: AdminDashboardProps) {
+  const [stats, setStats] = useState<AdminStats | null>(null);
+  const [recentUsers, setRecentUsers] = useState<User[]>([]);
+  const [trendingKeywords, setTrendingKeywords] = useState<Keyword[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const fetchData = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const [statsData, usersData, keywordsData] = await Promise.all([
+        getAdminStats(),
+        getUsers(1, 5),
+        getTrendingKeywords(5),
+      ]);
+      setStats(statsData);
+      setRecentUsers(usersData.users);
+      setTrendingKeywords(keywordsData);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Failed to load admin dashboard data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
   return (
     <Box>
-      {/* Back to Home Button */}
-      <Box sx={{ mb: 2 }}>
+      {/* Top Action Bar */}
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
         <IconButton
           onClick={() => onNavigate?.("home")}
           sx={{
@@ -47,6 +95,25 @@ export default function AdminDashboard({ onNavigate }: AdminDashboardProps) {
           <ArrowLeft size={18} />
           Back to Home
         </IconButton>
+
+        <Button
+          onClick={fetchData}
+          disabled={loading}
+          startIcon={<RefreshCw size={16} />}
+          sx={{
+            textTransform: "none",
+            fontWeight: 600,
+            borderRadius: 2,
+            color: "#4f46e5",
+            bgcolor: "rgba(79, 70, 229, 0.08)",
+            border: "1px solid rgba(79, 70, 229, 0.2)",
+            "&:hover": {
+              bgcolor: "rgba(79, 70, 229, 0.15)",
+            },
+          }}
+        >
+          Refresh Data
+        </Button>
       </Box>
 
       {/* Welcome Section */}
@@ -63,380 +130,313 @@ export default function AdminDashboard({ onNavigate }: AdminDashboardProps) {
           Admin Control Center
         </Typography>
         <Typography sx={{ opacity: 0.9, mt: 0.5 }}>
-          System overview and management tools
+          System overview and real-time management metrics
         </Typography>
       </Paper>
 
-      {/* Key Admin Metrics */}
-      <Grid container spacing={2.5} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <Paper
-            sx={{
-              p: 2.5,
-              borderRadius: 2,
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-              color: "#fff",
-              textAlign: "center",
-            }}
-          >
-            <Typography sx={{ fontSize: "0.85rem", opacity: 0.9 }}>
-              Total Users
-            </Typography>
-            <Typography sx={{ fontSize: "2.5rem", fontWeight: 800, mt: 0.5 }}>
-              1,247
-            </Typography>
-            <Typography sx={{ fontSize: "0.75rem", opacity: 0.8, mt: 0.5 }}>
-              +45 this month
-            </Typography>
-          </Paper>
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <Paper
-            sx={{
-              p: 2.5,
-              borderRadius: 2,
-              background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-              color: "#fff",
-              textAlign: "center",
-            }}
-          >
-            <Typography sx={{ fontSize: "0.85rem", opacity: 0.9 }}>
-              Active Sessions
-            </Typography>
-            <Typography sx={{ fontSize: "2.5rem", fontWeight: 800, mt: 0.5 }}>
-              342
-            </Typography>
-            <Typography sx={{ fontSize: "0.75rem", opacity: 0.8, mt: 0.5 }}>
-              Online now
-            </Typography>
-          </Paper>
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <Paper
-            sx={{
-              p: 2.5,
-              borderRadius: 2,
-              background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-              color: "#fff",
-              textAlign: "center",
-            }}
-          >
-            <Typography sx={{ fontSize: "0.85rem", opacity: 0.9 }}>
-              System Health
-            </Typography>
-            <Typography sx={{ fontSize: "2.5rem", fontWeight: 800, mt: 0.5 }}>
-              99.8%
-            </Typography>
-            <Typography sx={{ fontSize: "0.75rem", opacity: 0.8, mt: 0.5 }}>
-              Uptime
-            </Typography>
-          </Paper>
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <Paper
-            sx={{
-              p: 2.5,
-              borderRadius: 2,
-              background: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
-              color: "#fff",
-              textAlign: "center",
-            }}
-          >
-            <Typography sx={{ fontSize: "0.85rem", opacity: 0.9 }}>
-              API Requests
-            </Typography>
-            <Typography sx={{ fontSize: "2.5rem", fontWeight: 800, mt: 0.5 }}>
-              2.4M
-            </Typography>
-            <Typography sx={{ fontSize: "0.75rem", opacity: 0.8, mt: 0.5 }}>
-              Today
-            </Typography>
-          </Paper>
-        </Grid>
-      </Grid>
+      {error && (
+        <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+          {error}
+        </Alert>
+      )}
 
-      {/* Main Content */}
-      <Grid container spacing={2.5}>
-        {/* User Management */}
-        <Grid size={{ xs: 12, lg: 6 }}>
-          <Paper sx={{ borderRadius: 3, border: "1px solid rgba(0,0,0,0.1)" }}>
-            <Box
-              sx={{
-                p: 2.5,
-                borderBottom: "1px solid rgba(0,0,0,0.1)",
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-              }}
-            >
-              <Users size={20} style={{ color: "#667eea" }} />
-              <Typography sx={{ fontWeight: 700, fontSize: "1.1rem" }}>
-                User Management
-              </Typography>
-            </Box>
-            <Box sx={{ p: 2.5 }}>
-              {[
-                {
-                  action: "New user registration pending",
-                  count: 5,
-                  type: "pending",
-                },
-                {
-                  action: "Account suspension requests",
-                  count: 2,
-                  type: "warning",
-                },
-                {
-                  action: "Role change requests",
-                  count: 3,
-                  type: "info",
-                },
-              ].map((item, idx) => (
-                <Box
-                  key={idx}
-                  sx={{
-                    p: 2,
-                    mb: 1.5,
-                    background:
-                      item.type === "pending"
-                        ? "rgba(102,126,234,0.1)"
-                        : item.type === "warning"
-                          ? "rgba(245,87,108,0.1)"
-                          : "rgba(79,184,254,0.1)",
-                    borderLeft: `4px solid ${
-                      item.type === "pending"
-                        ? "#667eea"
-                        : item.type === "warning"
-                          ? "#f5576c"
-                          : "#00f2fe"
-                    }`,
-                    borderRadius: 1,
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <Typography sx={{ fontWeight: 600 }}>
-                    {item.action}
-                  </Typography>
-                  <Typography
-                    sx={{
-                      fontWeight: 800,
-                      fontSize: "1.2rem",
-                      color:
-                        item.type === "pending"
-                          ? "#667eea"
-                          : item.type === "warning"
-                            ? "#f5576c"
-                            : "#00f2fe",
-                    }}
-                  >
-                    {item.count}
-                  </Typography>
-                </Box>
-              ))}
-            </Box>
-          </Paper>
-        </Grid>
-
-        {/* System Alerts */}
-        <Grid size={{ xs: 12, lg: 6 }}>
-          <Paper sx={{ borderRadius: 3, border: "1px solid rgba(0,0,0,0.1)" }}>
-            <Box
-              sx={{
-                p: 2.5,
-                borderBottom: "1px solid rgba(0,0,0,0.1)",
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-              }}
-            >
-              <AlertCircle size={20} style={{ color: "#f5576c" }} />
-              <Typography sx={{ fontWeight: 700, fontSize: "1.1rem" }}>
-                System Alerts
-              </Typography>
-            </Box>
-            <Box sx={{ p: 2.5 }}>
-              {[
-                {
-                  alert: "High CPU usage detected",
-                  severity: "warning",
-                  time: "5 minutes ago",
-                },
-                {
-                  alert: "Database backup completed",
-                  severity: "success",
-                  time: "1 hour ago",
-                },
-                {
-                  alert: "Security patch available",
-                  severity: "info",
-                  time: "2 hours ago",
-                },
-              ].map((item, idx) => (
-                <Box
-                  key={idx}
-                  sx={{
-                    p: 2,
-                    mb: 1.5,
-                    background:
-                      item.severity === "warning"
-                        ? "rgba(245,87,108,0.1)"
-                        : item.severity === "success"
-                          ? "rgba(16,185,129,0.1)"
-                          : "rgba(79,184,254,0.1)",
-                    borderLeft: `4px solid ${
-                      item.severity === "warning"
-                        ? "#f5576c"
-                        : item.severity === "success"
-                          ? "#10b981"
-                          : "#00f2fe"
-                    }`,
-                    borderRadius: 1,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "flex-start",
-                    }}
-                  >
-                    <Box>
-                      <Typography sx={{ fontWeight: 600, mb: 0.3 }}>
-                        {item.alert}
-                      </Typography>
-                      <Typography sx={{ fontSize: "0.8rem", color: "#64748b" }}>
-                        {item.time}
-                      </Typography>
-                    </Box>
+      {loading ? (
+        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 300 }}>
+          <CircularProgress color="primary" />
+        </Box>
+      ) : (
+        <>
+          {/* Key Admin Metrics */}
+          <Grid container spacing={2.5} sx={{ mb: 3 }}>
+            {/* Total Users Card */}
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <Paper
+                sx={{
+                  p: 2.5,
+                  borderRadius: 3,
+                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  color: "#fff",
+                  position: "relative",
+                  overflow: "hidden",
+                  boxShadow: "0 10px 20px rgba(118, 75, 162, 0.2)",
+                }}
+              >
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <Box>
+                    <Typography sx={{ fontSize: "0.85rem", opacity: 0.9, fontWeight: 500 }}>
+                      Total Registered Users
+                    </Typography>
+                    <Typography sx={{ fontSize: "2.3rem", fontWeight: 800, mt: 0.5 }}>
+                      {stats?.users.total.toLocaleString() ?? 0}
+                    </Typography>
                   </Box>
+                  <Avatar sx={{ bgcolor: "rgba(255,255,255,0.2)", width: 44, height: 44 }}>
+                    <Users size={22} />
+                  </Avatar>
                 </Box>
-              ))}
-            </Box>
-          </Paper>
-        </Grid>
-      </Grid>
+                <Box sx={{ mt: 2, pt: 1, borderTop: "1px solid rgba(255,255,255,0.15)", display: "flex", gap: 1.5, flexWrap: "wrap" }}>
+                  <Typography sx={{ fontSize: "0.75rem", opacity: 0.9 }}>
+                    Researchers: <strong>{stats?.users.researchers ?? 0}</strong>
+                  </Typography>
+                  <Typography sx={{ fontSize: "0.75rem", opacity: 0.9 }}>
+                    Lecturers/Students: <strong>{stats?.users.lecturersStudents ?? 0}</strong>
+                  </Typography>
+                  <Typography sx={{ fontSize: "0.75rem", opacity: 0.9 }}>
+                    Admins: <strong>{stats?.users.admins ?? 0}</strong>
+                  </Typography>
+                </Box>
+              </Paper>
+            </Grid>
 
-      {/* Bottom Section */}
-      <Grid container spacing={2.5} sx={{ mt: 0.5 }}>
-        {/* Database Status */}
-        <Grid size={{ xs: 12, lg: 6 }}>
-          <Paper sx={{ borderRadius: 3, border: "1px solid rgba(0,0,0,0.1)" }}>
-            <Box
-              sx={{
-                p: 2.5,
-                borderBottom: "1px solid rgba(0,0,0,0.1)",
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-              }}
-            >
-              <Activity size={20} style={{ color: "#00f2fe" }} />
-              <Typography sx={{ fontWeight: 700, fontSize: "1.1rem" }}>
-                Database Status
-              </Typography>
-            </Box>
-            <Box sx={{ p: 2.5 }}>
-              {[
-                { metric: "Database Size", value: "2.4 GB", status: "normal" },
-                {
-                  metric: "Active Connections",
-                  value: "156",
-                  status: "normal",
-                },
-                {
-                  metric: "Query Performance",
-                  value: "45ms avg",
-                  status: "good",
-                },
-              ].map((item, idx) => (
+            {/* Scientific Papers Card */}
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <Paper
+                sx={{
+                  p: 2.5,
+                  borderRadius: 3,
+                  background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+                  color: "#fff",
+                  position: "relative",
+                  overflow: "hidden",
+                  boxShadow: "0 10px 20px rgba(0, 242, 254, 0.15)",
+                }}
+              >
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <Box>
+                    <Typography sx={{ fontSize: "0.85rem", opacity: 0.9, fontWeight: 500 }}>
+                      Scientific Papers
+                    </Typography>
+                    <Typography sx={{ fontSize: "2.3rem", fontWeight: 800, mt: 0.5 }}>
+                      {stats?.papers.toLocaleString() ?? 0}
+                    </Typography>
+                  </Box>
+                  <Avatar sx={{ bgcolor: "rgba(255,255,255,0.2)", width: 44, height: 44 }}>
+                    <FileText size={22} />
+                  </Avatar>
+                </Box>
+                <Box sx={{ mt: 2, pt: 1, borderTop: "1px solid rgba(255,255,255,0.15)" }}>
+                  <Typography sx={{ fontSize: "0.75rem", opacity: 0.9 }}>
+                    Total indexed publications in database
+                  </Typography>
+                </Box>
+              </Paper>
+            </Grid>
+
+            {/* Journals & Trends Card */}
+            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+              <Paper
+                sx={{
+                  p: 2.5,
+                  borderRadius: 3,
+                  background: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+                  color: "#fff",
+                  position: "relative",
+                  overflow: "hidden",
+                  boxShadow: "0 10px 20px rgba(56, 249, 215, 0.15)",
+                }}
+              >
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <Box>
+                    <Typography sx={{ fontSize: "0.85rem", opacity: 0.9, fontWeight: 500 }}>
+                      Journals & Sources
+                    </Typography>
+                    <Typography sx={{ fontSize: "2.3rem", fontWeight: 800, mt: 0.5 }}>
+                      {stats?.journals.toLocaleString() ?? 0}
+                    </Typography>
+                  </Box>
+                  <Avatar sx={{ bgcolor: "rgba(255,255,255,0.2)", width: 44, height: 44 }}>
+                    <BookOpen size={22} />
+                  </Avatar>
+                </Box>
+                <Box sx={{ mt: 2, pt: 1, borderTop: "1px solid rgba(255,255,255,0.15)", display: "flex", gap: 2 }}>
+                  <Typography sx={{ fontSize: "0.75rem", opacity: 0.9 }}>
+                    Keywords: <strong>{stats?.keywords ?? 0}</strong>
+                  </Typography>
+                  <Typography sx={{ fontSize: "0.75rem", opacity: 0.9 }}>
+                    Topics: <strong>{stats?.topics ?? 0}</strong>
+                  </Typography>
+                  <Typography sx={{ fontSize: "0.75rem", opacity: 0.9 }}>
+                    Sync Runs: <strong>{stats?.analysisRuns ?? 0}</strong>
+                  </Typography>
+                </Box>
+              </Paper>
+            </Grid>
+          </Grid>
+
+          {/* Main Content */}
+          <Grid container spacing={2.5}>
+            {/* Recent Users List */}
+            <Grid size={{ xs: 12, lg: 6 }}>
+              <Paper sx={{ borderRadius: 3, border: "1px solid rgba(0,0,0,0.1)", minHeight: 400 }}>
                 <Box
-                  key={idx}
                   sx={{
-                    p: 1.5,
-                    mb: 1,
+                    p: 2.5,
+                    borderBottom: "1px solid rgba(0,0,0,0.1)",
                     display: "flex",
-                    justifyContent: "space-between",
                     alignItems: "center",
-                    background: "rgba(0,0,0,0.02)",
-                    borderRadius: 1,
+                    gap: 1.5,
                   }}
                 >
-                  <Typography sx={{ fontWeight: 500 }}>
-                    {item.metric}
+                  <Users size={20} style={{ color: "#667eea" }} />
+                  <Typography sx={{ fontWeight: 700, fontSize: "1.1rem" }}>
+                    Recent User Signups
                   </Typography>
-                  <Typography
+                  <Button
+                    onClick={() => onNavigate?.("users")}
                     sx={{
+                      ml: "auto",
+                      textTransform: "none",
                       fontWeight: 600,
-                      color: item.status === "good" ? "#10b981" : "#00f2fe",
+                      color: "#4f46e5",
+                      fontSize: "0.85rem",
                     }}
                   >
-                    {item.value}
-                  </Typography>
+                    Manage All
+                  </Button>
                 </Box>
-              ))}
-            </Box>
-          </Paper>
-        </Grid>
+                <Box sx={{ p: 1.5 }}>
+                  {recentUsers.length === 0 ? (
+                    <Box sx={{ p: 4, textAlign: "center", color: "#64748b" }}>
+                      No recent users found.
+                    </Box>
+                  ) : (
+                    <List disablePadding>
+                      {recentUsers.map((user, idx) => (
+                        <Box key={user._id}>
+                          <ListItem sx={{ py: 1.5 }}>
+                            <ListItemAvatar>
+                              <Avatar sx={{ bgcolor: "#667eea" }}>
+                                {user.fullName ? user.fullName.charAt(0).toUpperCase() : "?"}
+                              </Avatar>
+                            </ListItemAvatar>
+                            <ListItemText
+                              primary={
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                  <Typography sx={{ fontWeight: 600, fontSize: "0.95rem" }}>
+                                    {user.fullName}
+                                  </Typography>
+                                  <Chip
+                                    label={user.role}
+                                    size="small"
+                                    sx={{
+                                      fontSize: "0.7rem",
+                                      height: 18,
+                                      fontWeight: 600,
+                                      bgcolor:
+                                        user.role === "admin"
+                                          ? "rgba(245, 158, 11, 0.15)"
+                                          : user.role === "researcher"
+                                            ? "rgba(79, 70, 229, 0.1)"
+                                            : "rgba(100, 116, 139, 0.1)",
+                                      color:
+                                        user.role === "admin"
+                                          ? "#d97706"
+                                          : user.role === "researcher"
+                                            ? "#4f46e5"
+                                            : "#475569",
+                                    }}
+                                  />
+                                </Box>
+                              }
+                              secondary={
+                                <Typography sx={{ fontSize: "0.8rem", color: "#64748b" }}>
+                                  {user.email}
+                                </Typography>
+                              }
+                            />
+                            <Typography sx={{ fontSize: "0.75rem", color: "#94a3b8" }}>
+                              {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : ""}
+                            </Typography>
+                          </ListItem>
+                          {idx < recentUsers.length - 1 && <Divider variant="inset" component="li" />}
+                        </Box>
+                      ))}
+                    </List>
+                  )}
+                </Box>
+              </Paper>
+            </Grid>
 
-        {/* Recent Actions Log */}
-        <Grid size={{ xs: 12, lg: 6 }}>
-          <Paper sx={{ borderRadius: 3, border: "1px solid rgba(0,0,0,0.1)" }}>
-            <Box
-              sx={{
-                p: 2.5,
-                borderBottom: "1px solid rgba(0,0,0,0.1)",
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-              }}
-            >
-              <TrendingUp size={20} style={{ color: "#43e97b" }} />
-              <Typography sx={{ fontWeight: 700, fontSize: "1.1rem" }}>
-                Recent Admin Actions
-              </Typography>
-            </Box>
-            <Box sx={{ p: 2.5 }}>
-              {[
-                {
-                  action: "User role updated",
-                  actor: "Admin User",
-                  time: "10 minutes ago",
-                },
-                {
-                  action: "System configuration changed",
-                  actor: "System",
-                  time: "30 minutes ago",
-                },
-                {
-                  action: "User account suspended",
-                  actor: "Admin User",
-                  time: "1 hour ago",
-                },
-              ].map((item, idx) => (
+            {/* Trending Keywords List */}
+            <Grid size={{ xs: 12, lg: 6 }}>
+              <Paper sx={{ borderRadius: 3, border: "1px solid rgba(0,0,0,0.1)", minHeight: 400 }}>
                 <Box
-                  key={idx}
                   sx={{
-                    p: 1.5,
-                    mb: 1,
-                    background: "rgba(0,0,0,0.02)",
-                    borderRadius: 1,
-                    borderLeft: "3px solid #43e97b",
+                    p: 2.5,
+                    borderBottom: "1px solid rgba(0,0,0,0.1)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1.5,
                   }}
                 >
-                  <Typography sx={{ fontWeight: 600, fontSize: "0.95rem" }}>
-                    {item.action}
-                  </Typography>
-                  <Typography sx={{ fontSize: "0.8rem", color: "#64748b" }}>
-                    {item.actor} • {item.time}
+                  <TrendingUp size={20} style={{ color: "#f59e0b" }} />
+                  <Typography sx={{ fontWeight: 700, fontSize: "1.1rem" }}>
+                    Top Trending Keywords
                   </Typography>
                 </Box>
-              ))}
-            </Box>
-          </Paper>
-        </Grid>
-      </Grid>
+                <Box sx={{ p: 2 }}>
+                  {trendingKeywords.length === 0 ? (
+                    <Box sx={{ p: 4, textAlign: "center", color: "#64748b" }}>
+                      No keywords monitored.
+                    </Box>
+                  ) : (
+                    <Grid container spacing={1.5}>
+                      {trendingKeywords.map((keyword, idx) => (
+                        <Grid size={{ xs: 12 }} key={keyword._id}>
+                          <Paper
+                            sx={{
+                              p: 2,
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              bgcolor: "rgba(0,0,0,0.02)",
+                              border: "1px solid rgba(0,0,0,0.04)",
+                              borderRadius: 2,
+                              transition: "transform 0.2s ease",
+                              "&:hover": {
+                                transform: "translateX(4px)",
+                                bgcolor: "rgba(79, 70, 229, 0.02)",
+                              },
+                            }}
+                          >
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                              <Typography sx={{ fontWeight: 700, color: "#4f46e5", minWidth: 24 }}>
+                                #{idx + 1}
+                              </Typography>
+                              <Typography sx={{ fontWeight: 600 }}>
+                                {keyword.name}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: "flex", gap: 1 }}>
+                              {keyword.trendScore !== undefined && (
+                                <Chip
+                                  label={`Score: ${keyword.trendScore}`}
+                                  size="small"
+                                  color="warning"
+                                  sx={{ fontWeight: 600, fontSize: "0.75rem" }}
+                                />
+                              )}
+                              {keyword.paperCount !== undefined && (
+                                <Chip
+                                  label={`${keyword.paperCount} Papers`}
+                                  size="small"
+                                  color="primary"
+                                  sx={{ fontWeight: 600, fontSize: "0.75rem", bgcolor: "#4f46e5" }}
+                                />
+                              )}
+                            </Box>
+                          </Paper>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  )}
+                </Box>
+              </Paper>
+            </Grid>
+          </Grid>
+        </>
+      )}
     </Box>
   );
 }
+

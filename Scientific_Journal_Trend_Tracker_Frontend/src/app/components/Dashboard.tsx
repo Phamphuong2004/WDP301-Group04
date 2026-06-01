@@ -9,15 +9,15 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ role, onSectionChange, onNavigate }: DashboardProps) {
-  if (role === "Admin") {
+  if (role === "admin") {
     return <AdminDashboard onNavigate={onNavigate} />;
   }
 
-  if (role === "Researcher") {
+  if (role === "researcher") {
     return <ResearcherDashboard onNavigate={onNavigate} />;
   }
 
-  if (role === "Lecturer/Student") {
+  if (role === "user") {
     return <ResearcherDashboard onNavigate={onNavigate} />;
   }
 

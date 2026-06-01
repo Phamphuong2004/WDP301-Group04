@@ -33,62 +33,16 @@ import {
   CheckCircle,
   ArrowRight,
 } from "lucide-react";
+import { login } from "../../services/api";
+
 
 interface LoginPageProps {
   onNavigate: (page: "home" | "register" | "dashboard", role?: string) => void;
 }
 
-const TEST_CREDENTIALS = [
-  {
-    role: "Researcher",
-    color: "#4f46e5",
-    email: "researcher@scitrend.com",
-    password: "Password123",
-  },
-  {
-    role: "Lecturer/Student",
-    color: "#06b6d4",
-    email: "student@scitrend.com",
-    password: "Password123",
-  },
-  {
-    role: "Admin",
-    color: "#10b981",
-    email: "admin@scitrend.com",
-    password: "Password123",
-  },
-];
+const TEST_CREDENTIALS: any[] = [];
 
-const ACTIVITY_FEED = [
-  {
-    user: "Nguyễn M.T",
-    action: "vừa bookmark",
-    paper: "Attention Is All You Need",
-    time: "2 phút trước",
-    color: "#4f46e5",
-  },
-  {
-    user: "Lê T.H",
-    action: "đang theo dõi chủ đề",
-    paper: "Deep Learning",
-    time: "5 phút trước",
-    color: "#06b6d4",
-  },
-  {
-    user: "Trần Q.B",
-    action: "tìm kiếm",
-    paper: "NLP Vietnamese",
-    time: "8 phút trước",
-    color: "#10b981",
-  },
-  {
-    user: "Phạm A.D",
-    action: "đánh dấu nổi bật",
-    paper: "GPT-4 Technical Report",
-    time: "12 phút trước",
-    color: "#f59e0b",
-  },
-];
+const ACTIVITY_FEED: any[] = [];
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 24 },
@@ -156,34 +110,20 @@ export default function LoginPage({ onNavigate }: LoginPageProps) {
     }
     setError("");
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1200));
-    setLoading(false);
-    
-    const matchedDemo = TEST_CREDENTIALS.find(demo => demo.email.toLowerCase() === email.toLowerCase());
-    const role = matchedDemo ? matchedDemo.role : "Researcher";
-    onNavigate("dashboard", role);
+    try {
+      const result = await login({ email, password });
+      // Lưu token vào localStorage
+      localStorage.setItem("token", result.token);
+      localStorage.setItem("user", JSON.stringify(result.user));
+      onNavigate("dashboard", result.user.role);
+    } catch (err: any) {
+      setError(err.message || "Đăng nhập thất bại. Vui lòng kiểm tra lại.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const fillDemo = (demoEmail: string, demoPassword: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPassword);
-    setError("");
-  };
 
-  const autoLogin = (demoEmail: string, demoPassword: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPassword);
-    setError("");
-    setTimeout(() => {
-      setLoading(true);
-      setTimeout(() => {
-        setLoading(false);
-        const matchedDemo = TEST_CREDENTIALS.find(demo => demo.email.toLowerCase() === demoEmail.toLowerCase());
-        const role = matchedDemo ? matchedDemo.role : "Researcher";
-        onNavigate("dashboard", role);
-      }, 1200);
-    }, 100);
-  };
 
   const inputSx = {
     "& .MuiOutlinedInput-root": {
